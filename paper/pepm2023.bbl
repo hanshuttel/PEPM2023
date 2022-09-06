@@ -1,0 +1,130 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{5}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Conway, Audia, Burnette, Cosgrove, and
+  Christiansen}{Conway et~al\mbox{.}}{2000}]%
+        {10.1145/332040.332481}
+\bibfield{author}{\bibinfo{person}{Matthew Conway}, \bibinfo{person}{Steve
+  Audia}, \bibinfo{person}{Tommy Burnette}, \bibinfo{person}{Dennis Cosgrove},
+  {and} \bibinfo{person}{Kevin Christiansen}.} \bibinfo{year}{2000}\natexlab{}.
+\newblock \showarticletitle{Alice: Lessons Learned from Building a 3D System
+  for Novices}. In \bibinfo{booktitle}{\emph{Proceedings of the SIGCHI
+  Conference on Human Factors in Computing Systems}}
+  \emph{(\bibinfo{series}{CHI '00})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{486–493}.
+\newblock
+\showISBNx{1581132166}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/332040.332481}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Godiksen, Herrmann, H\"{u}ttel, Lauridsen, and
+  Owliaie}{Godiksen et~al\mbox{.}}{2021}]%
+        {10.1145/3441296.3441393}
+\bibfield{author}{\bibinfo{person}{Christian Godiksen}, \bibinfo{person}{Thomas
+  Herrmann}, \bibinfo{person}{Hans H\"{u}ttel}, \bibinfo{person}{Mikkel~Korup
+  Lauridsen}, {and} \bibinfo{person}{Iman Owliaie}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{A Type-Safe Structure Editor Calculus}.
+  \bibinfo{howpublished}{\url{https://doi.org/10.1145/3441296.3441393}}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 2021 ACM SIGPLAN Workshop on
+  Partial Evaluation and Program Manipulation}} \emph{(\bibinfo{series}{PEPM
+  2021})}. \bibinfo{publisher}{Association for Computing Machinery},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{1–13}.
+\newblock
+\showISBNx{9781450383059}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3441296.3441393}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Omar, Voysey, Hilton, Aldrich, and
+  Hammer}{Omar et~al\mbox{.}}{2017}]%
+        {conf/popl/Hazelnut17}
+\bibfield{author}{\bibinfo{person}{Cyrus Omar}, \bibinfo{person}{Ian Voysey},
+  \bibinfo{person}{Michael Hilton}, \bibinfo{person}{Jonathan Aldrich}, {and}
+  \bibinfo{person}{Matthew~A. Hammer}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{{Hazelnut: A Bidirectionally Typed Structure Editor
+  Calculus}}. In \bibinfo{booktitle}{\emph{44th {ACM} {SIGPLAN} Symposium on
+  Principles of Programming Languages ({POPL} 2017)}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Resnick, Maloney, Monroy-Hern\'{a}ndez, Rusk,
+  Eastmond, Brennan, Millner, Rosenbaum, Silver, Silverman, and Kafai}{Resnick
+  et~al\mbox{.}}{2009}]%
+        {10.1145/1592761.1592779}
+\bibfield{author}{\bibinfo{person}{Mitchel Resnick}, \bibinfo{person}{John
+  Maloney}, \bibinfo{person}{Andr\'{e}s Monroy-Hern\'{a}ndez},
+  \bibinfo{person}{Natalie Rusk}, \bibinfo{person}{Evelyn Eastmond},
+  \bibinfo{person}{Karen Brennan}, \bibinfo{person}{Amon Millner},
+  \bibinfo{person}{Eric Rosenbaum}, \bibinfo{person}{Jay Silver},
+  \bibinfo{person}{Brian Silverman}, {and} \bibinfo{person}{Yasmin Kafai}.}
+  \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Scratch: Programming for All}.
+\newblock \bibinfo{journal}{\emph{Commun. ACM}} \bibinfo{volume}{52},
+  \bibinfo{number}{11} (\bibinfo{date}{nov} \bibinfo{year}{2009}),
+  \bibinfo{pages}{60–67}.
+\newblock
+\showISSN{0001-0782}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/1592761.1592779}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Teitelbaum and Reps}{Teitelbaum and
+  Reps}{1981}]%
+        {10.1145/358746.358755}
+\bibfield{author}{\bibinfo{person}{Tim Teitelbaum} {and}
+  \bibinfo{person}{Thomas Reps}.} \bibinfo{year}{1981}\natexlab{}.
+\newblock \showarticletitle{The Cornell Program Synthesizer: A Syntax-Directed
+  Programming Environment}.
+\newblock \bibinfo{journal}{\emph{Commun. ACM}} \bibinfo{volume}{24},
+  \bibinfo{number}{9} (\bibinfo{date}{sep} \bibinfo{year}{1981}),
+  \bibinfo{pages}{563–573}.
+\newblock
+\showISSN{0001-0782}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/358746.358755}
+\showDOI{\tempurl}
+
+
+\end{thebibliography}

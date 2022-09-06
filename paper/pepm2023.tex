@@ -1,0 +1,142 @@
+\documentclass[sigplan,screen]{acmart} 
+%
+\input{packages}
+\input{commands}
+\usepackage{flushend}
+\settopmatter{printfolios=true}
+
+%%% If you see 'ACMUNKNOWN' in the 'setcopyright' statement below,
+%%% please first submit your publishing-rights agreement with ACM (follow link on submission page).
+%%% Then please update our instructions page and copy-and-paste the NEW commands into your article.
+%%% Please contact us in case of questions; allow up to 10 min for the system to propagate the information.
+%%%
+%%% The following is specific to PEPM '23 and the paper
+%%% 'TITLE'
+%%% by 
+
+\setcopyright{acmcopyright}
+\acmPrice{15.00}
+\acmDOI{???}
+\acmYear{2023}
+\copyrightyear{2023}
+\acmSubmissionID{???}
+\acmISBN{978-1-4503-8305-9/21/01}
+\acmConference[PEPM '23]{Proceedings of the 2023 ACM SIGPLAN Workshop
+  on Partial Evaluation and Program Manipulation}{January
+  2023}{Boston, USA}
+\acmBooktitle{Proceedings of the 2023 ACM SIGPLAN Workshop
+  on Partial Evaluation and Program Manipulation, Boston, USA}
+
+
+\begin{document}
+%\pagestyle{empty}
+\pagenumbering{gobble}
+
+%
+\title{A Type-Safe Structure Editor Calculus}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+
+% \inst kan måske fjernes eftersom vi alle er fra samme institut.
+
+\author{Hans Hüttel}
+\email{hans@cs.aau.dk}
+\orcid{0000-0002-4603-5407}
+
+\affiliation{%
+  \institution{Department of Computer Science, University of Copenhagen}
+  \streetaddress{Selma Lagerlöfs Vej 300}
+  \city{2100 København}
+  \country{Denmark}}
+  
+\author{Nicolaj}
+\email{}
+
+\affiliation{%
+  \institution{Department of Computer Science, University of Copenhagen}
+  \streetaddress{Selma Lagerlöfs Vej 300}
+  \city{2100 København}
+  \country{Denmark}}
+
+\author{Thorbjørn}
+\email{}
+
+\affiliation{%
+  \institution{Department of Computer Science, University of Copenhagen}
+  \streetaddress{Selma Lagerlöfs Vej 300}
+  \city{2100 København}
+  \country{Denmark}}
+
+\author{Tórur}
+\email{}
+
+\affiliation{%
+  \institution{Department of Computer Science, University of Copenhagen}
+  \streetaddress{Selma Lagerlöfs Vej 300}
+  \city{2100 København}
+  \country{Denmark}}
+  
+\keywords{Structure editors, type systems, functional programming.}
+
+%
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+%
+
+%
+ \begin{abstract}
+??
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10011007.10011006.10011039.10011311</concept_id>
+<concept_desc>Software and its engineering~Semantics</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10003752.10010124.10010125.10010130</concept_id>
+<concept_desc>Theory of computation~Type structures</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011050.10011017</concept_id>
+<concept_desc>Software and its engineering~Domain specific languages</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Software and its engineering~Semantics}
+\ccsdesc[500]{Theory of computation~Type structures}
+\ccsdesc[300]{Software and its engineering~Domain specific languages}
+
+\maketitle              % typeset the header of the contribution
+
+\thispagestyle{empty}
+
+\input{sections/introduction}
+\input{sections/conclusion}
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references/references}
+
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
