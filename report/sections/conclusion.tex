@@ -1,0 +1,78 @@
+\section{Conclusion}
+\label{conclusion}
+
+The intention of our project was to act as a form of proof of concept of the
+editor calculus described by Godiksen et al. \pepm. We have described the
+implementation details of our editor, which models the formal editor calculus
+quite precisely. Part of the reason we could achieve this was our choice of
+writing in Elm. We modeled the calculus terms precisely in Elm using algebraic
+data types and the rules using pattern matches. Furthermore, we are able to
+construct programs in our editor by extending ASTs iteratively with editor
+expressions.
+
+With our implemented editor expression builder, we have made it possible to
+build editor expressions from scratch in such a way that only allows
+syntactically valid editor expressions to be made and completed editor
+expressions to be evaluated. Certain commonly used expressions are available as
+predefined macros.
+
+We partially implemented a type system that --- if fully implemented --- makes
+reductions of ill-typed configurations, ill-typed ASTs and runtime errors
+impossible. The unfinished implementations of the type system resulted in the
+type system not being used in the final implementation, but the majority of the
+system is implemented.
+
+Lastly, we implemented visual representations of ASTs and editor expressions.
+The representations of ASTs can be switched between textual and tree
+representations. Furthermore, we made it possible to move the view around and
+zoom in and out of the tree visualization.
+
+\subsection{Future work}
+
+The most crucial future work would be to fully implement the type system. In
+particular to implement the last cases of \elm{Eed.types} and \elm{Edt.typed}.
+As we do not have more details regarding this issue, we will focus on additional
+features we had considered during development, that we never got around to.
+
+\subsubsection{Collapsing subtrees}
+For the purpose of making the tree-view more visually intuitive, one might want
+to collapse subtrees. This comes with certain challenges. One problem is that if
+a subtree can be collapsed, we likely want to ensure that the cursor is not in
+that subtree, as the cursor would then be hidden. Similarly, if a subtree is
+collapsed, the cursor should not be able to navigate into that subtree.
+
+To address the latter problem, we can add additional data to every AST
+term constructor that keeps track of whether the ``node'' is collapsed. With
+this data, we can ensure that the function that navigates to a child node first
+checks if the child is collapsed, and then navigates only if the child is not
+collapsed.
+
+The solution to the former problem depends on how we let the user collapse a
+tree. One way would be to add a formation rule to editor expressions that
+represents toggling the collapsed state of the node under the cursor. If this
+approach is taken, we do not need to think about the cursor being in the subtree
+that is being collapsed, since it per definition surrounds the subtree.
+
+A second approach would be to let the user click on a node in the user
+interface, and then toggle whether that node is collapsed or not. With this
+approach we would have to check whether the cursor is inside the subtree, if it
+is being collapsed. If the cursor is not in the subtree, we would simply
+collapse the subtree, otherwise, we could either do nothing, or move the cursor
+up each parent until it encapsulates the subtree to be collapsed.
+
+Another consideration we have had for this feature, is that we could try and
+evaluate the collapsed subtree. If this subtree is evaluated to a constant,
+variable or some other short expression, we can show this as a summary instead
+of showing the root of the subtree we have collapsed. \\
+\subsubsection{View following cursor}
+Another feature that would improve usability is to make the default of the view
+to follow the cursor when moving through the tree. There are a few different
+ways to do it. The editor can follow the cursor with it being centered in the
+view. Alternatively it can have the view follow whenever the cursor is near the
+edge. For either of these cases, the editor could have a button that moves the
+focus back to the cursor, making it possible to toggle between the locked and
+the free view.
+\subsubsection{Saving and loading project}
+Another feature that would be nice to have is being able to save and load a
+project. This could for example be implemented as JSON encoders and decoders,
+where the user could store to or load from a local JSON file.

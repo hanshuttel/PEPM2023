@@ -1,0 +1,237 @@
+\section{Type-checking}
+
+\begin{frame}
+    \frametitle{Type-checking}
+    The editor in our hand-in contains most of the type system derived by
+    Godiksen et al. \pepm. It is however not fully implemented and thus is not
+    used. In order for the type system to be fully implemented, it needs some
+    new custom types, functions and patterns.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Type-checking}
+    \framesubtitle{Type conditions and the function \texttt{types}}
+    The implementation of the function \texttt{types} is unfinished due to type
+    conditions not being implemented.
+    \pause
+    \begin{itemize}
+      \item We have two type conditions: $\Theta \tau\in \eed$ \& $\Theta x : \tau \in \eed$.
+        \begin{itemize}
+          \item $\Theta \tau~~~~$ holds iff $\frac{\emptyset \vdash [C\cursor{\hat{a}}] : \tau_2~~\ctx{a}\vdash \hat{a} : \tau }{C[\cursor{\hat{a}}] \models \Theta \tau}$ ~~~~~~~~~~~~~holds (TYC-AST).
+        \item $\Theta x : \tau$ holds iff $\frac{\emptyset \vdash [C\cursor{\hat{a}}] : \tau_2~~\ctx{a}\vdash \hat{a} : \tau_1 ~~~~ \ctx{a}(x) = \tau }{C[\cursor{\hat{a}}] \models \Theta x : \tau}$ holds (TYC-VAR).
+        \end{itemize}
+          \pause
+        \item Semantical differences compared to other conditions makes type
+          conditions non-trivial to evaluate.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Type-checking}
+    \framesubtitle{Type conditions syntax}
+    We can model the type conditions $\Theta \tau$ \& $\Theta \bind{x}{\tau}$
+    in the $\eed$ custom type.
+    \begin{lstlisting}
+type Eed a
+    = Neg (Eed a)
+    | Conjunction (Eed a) (Eed a)
+    | Disjunction (Eed a) (Eed a)
+    | At (Aam a)
+    | Possibly (Aam a)
+    | Necessarily (Aam a)
+    | ThetaAst Ast.ATyp
+    | ThetaVar Var.Id Ast.ATyp
+    | EedHole a
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Type-checking}
+    \framesubtitle{Type conditions semantics}
+    Type conditions are evaluated relative to well-formed ASTs, AST type
+    judgements and AST type contexts. Hence we can evaluate type conditions in
+    the $\elm{Ast}$ module.
+    \begin{lstlisting}
+{-Eed.eval-}
+eval phi a =
+  case phi of
+    ...
+    ThetaAst tau ->
+      Ast.typeCondition Nothing tau a
+
+    ThetaVar x tau ->
+      Ast.typeCondition (Just x) tau a
+    ...
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Type-checking}
+    \framesubtitle{Type conditions semantics continued}
+    \begin{lstlisting}[basicstyle=\tiny]
+typeCondition : Maybe Var.Id -$>$ ATyp -$>$ WellFormedAst -$>$ Bool
+typeCondition var tau ast =
+
+    let actx = ctxAtCursor ast in
+    
+    typed (fromC ast) Ctx.empty /= Nothing && (
+        case var of
+
+            Just x -$>$
+                typed (underCursor ast) actx /= Nothing && (
+                   case Ctx.get x actx of
+                       Just tau1 -$>$
+                           tau == tau1
+
+                       Nothing -$>$
+                           False
+                )
+
+            Nothing -$>$
+                case typed (underCursor ast) actx of
+                    Just tau1 -$>$
+                        tau == tau1
+
+                    Nothing -$>$
+                        False
+    )
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type-checking}
+  \framesubtitle{The function \texttt{types}}
+  The missing clauses of \texttt{types} are the following two clauses.
+  \begin{align*}
+    &types(\Theta \tau_1,~(\ctx{a},~\tau_2)) = (\ctx{a},~\tau_1)\\
+    &types(\Theta \bind{x}{\tau_1},~(\ctx{a},~\tau_2)) = ((\ctx{a},~\bind{x}{\tau_1}),~\tau_2)
+  \end{align*}
+  \pause
+  With the type conditions modeled, the two clauses are straight forward to
+  implement. 
+    \begin{lstlisting}
+types d ( gamma, tau ) =
+  case d of
+    ThetaAst tau1 ->
+      ( gamma, tau1 )
+
+    ThetaVar x tau1 ->
+      ( Ctx.bind x tau1 gamma, tau )
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Type-checking}
+    \framesubtitle{Type rules}
+    The implementation of three type rules in the pattern match of the
+    function \texttt{Edt.typed} is unfinished. The rules are the
+    following.
+    \pause
+    \begin{itemize}
+      \item (T-COND).
+        \begin{itemize}
+          \item Can be implemented with the function \texttt{types}.
+        \end{itemize}
+        \pause
+      \item (T-SUB-ABS) \& (T-SUB-APP).
+        \begin{itemize}
+          \item Can be implemented with type annotations.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Type-checking}
+    \framesubtitle{Type consistency}
+    In the type rules we use the notation of type consistency. We denote
+    that type $\tau_1$ and $\tau_2$ are consistent with $\tau_1 \sim
+    \tau_2$, and define it with the following three rules:
+    \begin{align*}
+      &\text{(Cons-1)}\qquad\tau\sim\tau\\
+      &\text{(Cons-2)}\qquad\tau\sim\breakpoint{\tau}\\
+      &\text{(Cons-3)}\qquad\frac{\tau_1\sim\tau_1'\quad\tau_2\sim\tau_2'}{(\tau_1\to\tau_2)\sim(\tau_1'\to\tau_2')} 
+    \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Type-checking}
+    \framesubtitle{Type rules implementation (T-SUB-ABS)}
+    Definition:
+    \begin{center}\scriptsize{$\TSubAbs$}\end{center}
+    \pause
+    Implementation:
+    \begin{lstlisting}[basicstyle=\tiny]
+Pre (Aep.Sub (Aam.Lambda x tau1 tau2)) e -$>$
+  case Ctx.get p ectx of
+    Just ( actx, tau3 ) -$>$
+      let
+        ectx_ =
+          Ctx.bind (Pth.extend p Ast.One) ( Ctx.bind x tau1 actx, tau2 ) <|
+            Ctx.bind p ( actx, Ast.TLambda tau1 tau2 ) <|
+              restrictBarPath p ectx
+      in
+      Ast.isConsistent tau3 (Ast.TLambda tau1 tau2) && typed p ectx_ e
+
+    Nothing -$>$
+      False
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Type-checking}
+    \framesubtitle{Type rules implementation (T-SUB-APP)}
+    Definition:
+    \begin{center}\scriptsize{$\TSubApp$}\end{center}
+    \pause
+    Implementation:
+    \begin{lstlisting}[basicstyle=\tiny]
+Pre (Aep.Sub (Aam.App tau1 tau2)) e -$>$
+  case Ctx.get p ectx of
+    Just ( actx, atyp ) -$>$
+      let
+        ectx_ =
+          Ctx.bind (Pth.extend p Ast.One) ( actx, Ast.TLambda tau1 tau2 ) <|
+            Ctx.bind (Pth.extend p Ast.Two) ( actx, tau1 ) <|
+              Ctx.bind p ( actx, tau2 ) <|
+                restrictBarPath p ectx
+      in
+      Ast.isConsistent atyp tau2 && typed p ectx_ e
+
+    Nothing -$>$
+      False
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Type-checking}
+    \framesubtitle{Type rules implementation (T-COND)}
+    Definition:
+    \begin{center}\scriptsize{$\TCond$}\end{center}
+    \pause
+    Implementation:
+    \begin{lstlisting}[basicstyle=\tiny]
+Bicond eed e1 e2 -$>$
+    let ( actx, atyp ) = Eed.types eed ( Ctx.empty, Ast.TIndeterminate )
+        d = Eed.limits eed <|
+            Set.fromList
+                [ Aam.Var (Var.id "x")
+                , Aam.Const (Const.int 1)
+                , Aam.App Ast.TIndeterminate Ast.TIndeterminate
+                , Aam.Lambda (Var.id "x") Ast.TIndeterminate Ast.TIndeterminate
+                , Aam.Break
+                , Aam.Hole Ast.TIndeterminate
+                ]
+        delta = Set.intersectSetOfSets <| Set.map (\a -$>$ Aam.follows a p) d
+    in
+    path p e1 == path p e2
+        && typed p (update (Set.insert ( p, ( actx, atyp ) ) delta) ectx) e1
+        && typed p ectx e2
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Type-checking}
+    The current editor contains the unfinished parts of the type system and a
+    type-checker that checks configurations before evaluation. Hence the
+    type system is now fully implemented in our editor.
+\end{frame}

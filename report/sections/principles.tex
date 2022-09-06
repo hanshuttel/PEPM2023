@@ -1,0 +1,44 @@
+\section{Principles of the editor calculus}
+\label{principles}
+
+The editor calculus defined by Godiksen et al. can iteratively build, modify
+and evaluate ASTs with editor expressions through bidirectional communication in
+a type-safe manner \pepm. ASTs are denoted $a$ and their syntax is formed by
+seven different terms, the most simple being that of variables, constants,
+lambdas and applications. Then we also have cursors, which are used to indicate
+where we are editing the structure of an AST. We say an AST is well-formed iff
+it has one cursor. Lastly we have breakpoints and holes. Breakpoints allow for
+partial evaluation of ASTs i.e. subtrees beneath breakpoints are not evaluated,
+and holes are unfinished subtrees.
+
+Editor expressions are denoted $E$ and are chains of different commands and
+conditions. The trivial case that end editor expressions is the empty editor
+expression, denoted $\nil$. Then we have prefix commands, biconditional
+expressions, sequential composition and recursive expressions. The prefix
+commands can tell to evaluate, substitute at cursor position or move cursor
+position in an AST. We describe the formation of ASTs and editor expressions
+further in section \ref{modeling}.\\
+
+The semantics is bidirectional communication where the editor expression
+reduction is relative to some AST, and the AST provides information for the
+reduction. Thus the semantics is defined relative to configurations of an AST
+and an editor expression, denoted $\breakpoint{E,a}$. When editor expressions
+are reduced we get new expressions and ASTs and it is defined in a labeled
+transition system where transitions take the form $\breakpoint{E, a}
+\transition{$\alpha$} \breakpoint{E', a'}$. The calculus also defines labeled
+transition systems for reducing prefix commands and for evaluating ASTs. The
+reduction of conditional editor expressions are defined in a modal logic system
+with negation, conjunction, disjunction and three modalities. We will go into
+more details about reduction semantics, reduction rules and systems in section
+\ref{evaluation}.\\
+
+In their paper, Godiksen et al. define a sound type system for the calculus
+\pepm. In the editor we judge the well-typedness of ASTs and editor expressions
+relative to either an AST type context or an editor expression type context and
+a path to the cursor, respectively, which we denote $\ctx{a} \vdash
+\bind{a}{\tau}$ and $p,\ctx{e} \vdash \bind{E}{ok}$, respectively. We type
+check configurations before we resolve them. A configuration is well-typed when
+both the AST is well-typed in the empty AST type context and the editor
+expression is well-typed in the path to the cursor and the editor type context
+of the AST. In section \ref{modeling} and \ref{type-checking} we will define
+and outline the detail of paths, contexts and the type rules.

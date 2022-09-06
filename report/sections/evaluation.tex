@@ -1,0 +1,707 @@
+\section{Evaluation}
+\label{evaluation}
+
+This section will discuss how we handle evaluation of editor expressions and
+ASTs. Editor expressions are evaluated in relation to an AST, and described by
+the reduction semantics in the calculus \pepm. The reduction semantics is
+divided into four different systems; an overall labeled transition system for
+editor expressions, a big-step transition system for ASTs based on the editor
+expression prefix \texttt{eval}, a labeled transition system for cursor
+movement and substitutions based on the editor expression prefix $\pi$ where
+$\pi \neq \texttt{eval}$, and finally a modal logic system for evaluating the
+conditions in conditional editor expressions. Likewise for the implementation,
+we have a hierarchy of four \elm{eval} functions as part of the code for
+\elm{Edt}, \elm{Ast}, \elm{Aep} and \elm{Eed}, respectively. Whenever the user
+decides to evaluate an editor expression upon their AST, the function
+\elm{Edt.eval} is called, and from there all the other \elm{eval}s can be
+invoked if necessary. The signatures of the said \elm{eval} functions are
+\begin{lstlisting}[language=elm,%
+                     label="eval-hiarchy",%
+                     gobble=0,%
+                     ]
+{-Edt-}
+eval : Completed -> WellFormedAst -> Evaluated
+{-Aep-}
+eval : Completed -> WellFormedAst -> AstOrVal
+{-Eed-}
+eval : Completed -> WellFormedAst -> Bool
+{-Ast-}
+eval : WellFormedAst -> Result EvalError Val
+\end{lstlisting}
+As such, we have a type-level guarantee from Elm that we can only apply an
+editor expression if it is completed, and we can only apply an editor
+expression to a well-formed AST. The rules, systems and the implementation will be
+discussed in detail in the follow subsections.
+
+
+\subsection{Evaluating editor expressions}
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llll}
+    \scriptsize(COND-1)  & $ \CondOne $           & \scriptsize(COND-2) & $ \CondTwo$ \\
+    \scriptsize(EVAL)    & $ \Eval $              & \scriptsize(SEQ)    & $ \Seq$     \\
+    \scriptsize(STRUCT)  & $\Struct$              & \scriptsize(CONTEXT)& \scriptsize$\Context$
+  \end{tabular}
+  \caption{Editor Expression reduction rules}
+  \label{fig:edtreductionrules}
+\end{figure*}
+
+The system for reducing editor expressions is a labeled transition system
+$(S_E, \mathcal{L}_E, \to)$, where $S_E = \edt \times \AST$ and $\mathcal{L}_E
+= \val \cup \aep \cup \{\epsilon\}$ and where transitions take the form
+$\breakpoint{E, a} \transition{$\alpha$} \breakpoint{E', a'}$ with $a$ being
+well-formed, $E$ being completed and $\alpha \in \mathcal{L}_E$. \\
+
+Editor expressions are always reduced in configurations of the form
+$\breakpoint{E,a}$, where $E$ is the given editor expression and $a$ is the
+currently build AST to which $E$ is applied. In terms of the labeled
+transition system, we incrementally reduce the configuration until $E'$ becomes
+$\nil$, and returns $\alpha$ for each increment. Figure
+\ref{fig:edtreductionrules} show the different reduction rules for editor
+expressions.
+
+The rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
+for a biconditional editor expression, $\bicond{\phi}{E_1}{E_2}$, we either use
+$E_1$ or $E_2$ as editor expression for the next reduction increment, based on
+whether or not $\phi$ holds for the AST in the configuration. Hence it just
+returns $\epsilon$. The rule \hyperref[fig:edtreductionrules]{(EVAL)} describes
+that if we have the expression $\texttt{eval}.E$, we evaluate the AST to some
+value in \val~which we return, and the expression of the new configuration is
+$E$. The rule \hyperref[fig:edtreductionrules]{(SEQ)} describes that for a
+composition $\seqcomp{E_1}{E_2}$ we reduce $E_1$ until it becomes $\nil$, while
+updating the configuration and returning accordingly. The trivial case $E_1 =
+\nil$ in sequential composition is caught by the rule
+\hyperref[fig:edtreductionrules]{(STRUCT)}, as it describes that if two editor
+expressions are equivalent, then two configurations using the editor expressions
+respectively will also be reduced equivalently, e.g. we have that the sequential
+composition $\seqcomp{\nil}{E_2}$ is equivalent to $E_2$ and thus reducing the
+two expressing on an AST is also equivalent. This rule also takes care of
+recursive editor expressions. The last rule
+\hyperref[fig:edtreductionrules]{(CONTEXT)} describes that if we have a
+substitution or cursor movement expression of the form $\pi.E$, then we reduce
+the AST according to the labeled transition system for substitution and cursor
+movement expressions, and update the configuration to contain the editor
+expression $E$ and the new AST. \\
+
+The implementation of $\elm{Edt.eval}$ has the same two arguments as the
+reduction rules, i.e. a completed editor expression and a well-formed AST. The
+return-value however is of the type $\elm{Evaluated}$, which is a type alias
+over a record with two fields; a well-formed AST and a list of outputs after
+reducing each editor expression.
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+type alias Evaluated =
+    { ast : WellFormedAst
+    , output : List (Result Ast.EvalError Ast.Val)
+    }
+\end{lstlisting}
+The $\elm{ast}$ field is used as the AST of the next configuration. That is,
+when a editor expression is evaluated in a configuration, then a new
+configuration will automatically be setup, where the AST is the one returned by
+the last evaluation and the editor expression is uncompleted and constructed as
+a $\elm{EdtHole}$. The $\elm{output}$ field is a list of $\elm{Result}$s such
+that if we get an evaluation error, we return that error of type
+$\elm{EvalError}$, and if not, we return the evaluation value of type
+$\elm{Val}$\elmcore. Notice that we return a $\val$ if there is the editor
+expression $\pi = \texttt{eval}$ and $\{\epsilon\}$ if not, thus
+$\mathcal{L}_E\setminus\aep$.
+
+In the implementation we need one more thing not accounted for by the
+theoretical calculus; how we handle recursive bindings. We chose to use
+explicit substituations of recursion variables and carry the extra information
+of bindings around. For that we use a dictionary where the expression is bound
+to its ID, expressed as the type $\elm{Dict String Completed}$. Since we do not
+want to modify the signature of the calculus, $\elm{eval}$ instantiates an
+empty $\elm{Dict}$ and calls $\elm{eval\_}$ to handle the reduction rules.
+\begin{lstlisting}[language=elm,%
+                   label="edt-eval",%
+                   gobble=0,%
+                   ]
+{-Edt-}
+eval e a =
+    eval_ Dict.empty e a
+\end{lstlisting}
+$\elm{eval\_}$ unwraps the editor expression in a pattern match and applies the
+rules accordingly. First are the two rules for prefix commands,
+\hyperref[fig:edtreductionrules]{(EVAL) and (CONTEXT)}. Here we use the
+function $\elm{Aep.eval}$ to evaluate the prefix itself, which we will get back
+to after $\elm{Edt.eval}$. If it is a substitution or cursor movement it will
+update the configuration and call $\elm{eval\_}$ recursively and if $\pi =
+\texttt{eval}$ then it will concatenate the found value to the output of the
+next expression.
+\begin{lstlisting}[language=elm,%
+                   label="edt-eval_-pre",%
+                   gobble=0,%
+                   ]
+eval_ : Dict String Completed -> Completed -> WellFormedAst -> Evaluated
+eval_ bindings e a =
+    case e of
+        Pre pi e1 ->
+            case Aep.eval pi a of
+                Aep.Ast a1 ->
+                    eval_ bindings e1 a1
+
+                Aep.Val v ->
+                    (\{ ast, output } -> Evaluated ast (v :: output)) <|
+                        eval_ bindings e1 a
+\end{lstlisting}
+Rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} are straight forward.
+\begin{lstlisting}[language=elm,%
+                   label="edt-eval_-bicond",%
+                   gobble=4,%
+                   ]
+    Bicond phi e1 e2 ->
+        if Eed.eval phi a then
+            eval_ bindings e1 a
+
+        else
+            eval_ bindings e2 a
+\end{lstlisting}
+Sequential composition can be written a bit more elegantly in code. Rather than
+modeling the rules \hyperref[fig:edtreductionrules]{(SEQ) and (STRUCT)}
+explicitly, we can do it implicitly by first reducing the first expression
+and then the second expression on the AST obtained from reducing the first
+expression. After that we return the AST of the second expression and the
+outputs concatenated.
+\begin{lstlisting}[language=elm,%
+                   label="edt-eval_-seqcomp",%
+                   gobble=4,%
+                   ]
+    SeqComp e1 e2 ->
+        let
+            r1 =
+                eval_ bindings e1 a
+
+            r2 =
+                eval_ bindings e2 r1.ast
+        in
+            Evaluated r2.ast (r1.output ++ r2.output)
+\end{lstlisting}
+The same goes for recursive expressions, where instead of modeling
+\hyperref[fig:edtreductionrules]{(STRUCT)} explicitly, we use the dictionary to
+either bind or get the expression. We chose that calls to free variables
+result in calls to the $\elm{Nil}$ expression.
+\begin{lstlisting}[language=elm,%
+                   label="edt-eval_-rec",%
+                   gobble=8,%
+                   ]
+        Rec x e1 ->
+            eval_ (Dict.insert (Var.toString x) e1 bindings) e1 a
+
+        Call x ->
+            (\e1 -> eval_ bindings e1 a)
+                (Maybe.withDefault Nil <| Dict.get (Var.toString x) bindings)
+\end{lstlisting}
+For the expression $\elm{Nil}$ we do nothing and for the expression
+$\elm{EdtHole}$ we use $\elm{never}$ as usual.
+\begin{lstlisting}[language=elm,%
+                   label="edt-eval_-nil",%
+                   gobble=8,%
+                   ]
+        Nil ->
+            Evaluated a []
+
+        EdtHole n ->
+            never n
+\end{lstlisting}
+
+The prefix command case use $\elm{Aep.eval}$. The return-type of the function is
+$\elm{AstOrVal}$, which is a custom type that can be constructed by either a
+well-formed AST or a  result-type value.
+\begin{lstlisting}[language=elm,%
+                   label="astorval",%
+                   gobble=0,%
+                   ]
+type AstOrVal
+    = Ast Ast.WellFormedAst
+    | Val (Result Ast.EvalError Ast.Val)
+\end{lstlisting}
+The function itself simply unwraps the prefix command in a pattern match and
+call either $\elm{Ast.substitute}$, $\elm{Ast.parent}$, $\elm{Ast.child}$ or
+$\elm{Ast.eval}$ according to the case. All of these functions will be covered
+in the following subsections, as they adhere to different reduction systems.
+\begin{lstlisting}[language=elm,%
+                   label="aep-eval",%
+                   gobble=0,%
+                   ]
+{-Aep-}
+eval pi a =
+    case pi of
+        Sub d ->
+            Ast.substitute (Aam.getEquivalent d) a
+                |> Ast
+
+        Parent ->
+            Ast.parent a
+                |> Ast
+
+        Child n ->
+            Ast.child n a
+                |> Ast
+
+        Eval ->
+            Ast.eval a |> Val
+
+        AepHole n ->
+            never n
+\end{lstlisting}
+
+
+\subsection{Evaluating abstract syntax trees}
+
+\begin{figure*}[]
+  \center
+  \begin{tabular}{llll}
+    \scriptsize(B-CONST)  & $ \BConst $         & \scriptsize(B-ABS)           & $ \BAbs$     \\
+    \scriptsize(B-CURSOR) & $ \BCursor $        & \scriptsize(B-BREAKB)        & $ \BBreakB$  \\
+    \scriptsize(B-APP)    & \scriptsize $\BApp$ &                              &              \\
+    \scriptsize(B-APPB-1) & $ \BAppBOne $       & \scriptsize\text{(B-APPB-2)} & $ \BAppBTwo$ \\
+    \scriptsize(B-APPH-1) & $ \BAppHOne $       & \scriptsize\text{(B-APPH-2)} & $ \BAppHTwo$
+  \end{tabular}
+  \caption{Big step transition rules for ASTs}
+  \label{fig:transitionrulesast}
+\end{figure*}
+
+The system for evaluating ASTs is based on the big step semantics described as
+(\AST, $\to$, \val) in Godiksen et al. \pepm, where transitions are of the form
+$a \to v$ and express that the AST $a \in \AST$ evaluates to the value $v \in
+\val$. The semantics change based on where $v$ is found, i.e. if $v \in \hval$
+or $v \in \bval$. \\
+
+The big-step semantics are listed in figure \ref{fig:transitionrulesast}. The
+semantics works on ASTs and not cursor contexts and as such our \elm{eval}
+function removes the cursor from its AST and passes it to another function
+called \elm{evalAst}. Thus the rule
+\hyperref[fig:transitionrulesast]{(B-CURSOR)} becomes obsolete and is omitted
+from our implementation.
+
+The function \elm{evalAst} handles the logic of the evaluation rules by pattern
+matching on the root of the AST. In all cases except applications, the rules
+state that the AST is already in normal form and hence simply returns its
+corresponding $\val$. E.g. if the root of the AST is an unapplied
+lambda-expression $\lambda x . a$, then applying the editor-expression
+\elm{eval} returns $\val$ $\lambda x . a$.
+
+Applications however, are not in normal form and have five different rules
+describing the logic of reducing them. The rules depend on whether the value of
+the branches of the AST application are in $\hval$ or $\bval$. The reduction is
+described such that we evaluate the application function before the argument,
+and the set where the result belongs dictates how or if we evaluate the
+argument. If the function is in $\bval$ then we do not evaluate the argument, as
+defined by rule \hyperref[fig:transitionrulesast]{(B-APPB-1)}. We handle this
+order by first passing the AST application to a function named \elm{evalApp}.
+
+This function composes the two functions over the monadic type \elm{Result}. The
+\elm{Result} type encapsulates any errors that occur when encountering undefined
+AST reduction behavior.
+
+The function evaluates the first component of the application with
+\elm{evalAst}, and then applies the result to the second component using
+\elm{evalApp1}.
+
+\elm{evalApp1} may call \elm{evalApp2} if we need to evaluate the second
+parameter as well.
+
+Lastly if we have the case \hyperref[fig:transitionrulesast]{(B-APP)} then
+\elm{evalApp2} calls the function \elm{betaReduce} when handling the beta
+reduction.
+
+Thus \elm{eval} is implemented in a hierarchy of functions each consisting of a
+single pattern match corresponding to matched clauses, where the functions have
+the following signatures and where \elm{EvalError} is an error type representing
+either applying a variable or constant.
+
+\begin{lstlisting}[language=elm,%
+                   label="eval-hierarchy",%
+                   gobble=4,%
+                   ]
+    eval : WellFormedAst -> Result EvalError Val
+    evalAst : Ast -> Result EvalError Val
+    evalApp : Ast -> Ast -> Result EvalError Val
+    evalApp1 : Val -> Ast -> Result EvalError Val
+    evalApp2 : Var.Id -> Ast -> Val -> Val -> Result EvalError Val
+    betaReduce : Var.Id -> Ast -> Ast -> Ast
+\end{lstlisting}
+
+
+\subsection{Substitution and cursor movement}
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llll}
+    \scriptsize(VAR)     & $ \Var $    & \scriptsize(CONST)     & $ \Const$   \\
+    \scriptsize(HOLE)    & $ \Hole $   & \scriptsize(APP)       & $ \App$     \\
+    \scriptsize(BREAK-1) & $\BreakOne$ & \scriptsize{(BREAK-2)} & $\BreakTwo$ \\
+    \scriptsize(LAMBDA)  & $\LAMBDA $  &                        &
+  \end{tabular}
+  \caption{Substitution reduction rules}
+  \label{fig:substitutionreductionrules}
+\end{figure*}
+
+The system for reducing substitution and cursor movement expressions is another
+labeled transition system $(S_{\pi}, \mathcal{L}_{\pi}, \to)$, where $S_{\pi}
+= \AST$ and $\mathcal{L}_E = \aep$ and where transitions take the form $a
+\transition{$\pi$} a'$ with $a \in S_{\pi}$, $a' \in S_{\pi}$ and $\pi \in
+\mathcal{L}_{\pi}$. \\
+
+In the calculus \pepm, there are six possible node modifiers to choose from for
+a substitution of transition $\pi$. Each of them are described by a single
+reduction rule, except for substitution of breakpoints where there are two
+reduction rules, \hyperref[fig:substitutionreductionrules]{(BREAK-1) and
+(BREAK-2)}. The two breakpoint rules state the $\pi$ transition
+$\{\texttt{break}\}$ respectively insert or remove a breakpoint between the
+cursor and $\hat{a}$ in $a$. The other rules simply state that the subtree
+$\hat{a}$ under the cursor in $a$ is substituted with the prefix transition
+node modifier.
+
+For the implementation we have written a function named \elm{substitute} (see
+listing \ref{substitutefunction} in the appendix for the full version), that
+takes an Ast and a well-formed AST as arguments. The former formal parameter
+represents the atomic AST, and the latter the well-formed AST within which the
+substitution takes place. We pattern match on the well-formed AST, rebuild the
+cursor context and call the \elm{substitute} function recursively until we find
+the cursor. The interesting part takes place when we find the cursor. That case
+can be seen in the following listing.
+
+\begin{lstlisting}[language=elm,%
+                   label="substitute-at-cursor",%
+                   gobble=4,%
+                   ]
+    Cursor a1 ->
+        case ( a1, sub ) of
+            ( Break a1_, Break _ ) ->
+                Cursor a1_
+
+            ( _, Break _ ) ->
+                Cursor <| Break a1
+
+            _ ->
+                Cursor sub
+\end{lstlisting}
+
+Here we pattern match on the AST under the cursor in order to apply the correct
+rule. The first case matches if
+\hyperref[fig:substitutionreductionrules]{(BREAK-2)} holds, the second case
+matches if \hyperref[fig:substitutionreductionrules]{(BREAK-1)} holds, and the
+third case represents all other substitution rules. \\
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llll}
+    \scriptsize(APPC-1) & $\AppCOne$ & \scriptsize(APPC-2) & $\AppCTwo$ \\
+    \scriptsize(APPP-1) & $\AppPOne$ & \scriptsize(APPP-2) & $\AppPTwo$ \\
+    \scriptsize(ABSC)   & $\ABSC$    & \scriptsize{(ABSP)} & $\ABSP$    \\
+    \scriptsize(BREAKC) & $\BreakC $ & \scriptsize{BREAKP} & $\BreakP$
+  \end{tabular}
+  \caption{Cursor movement reduction rules}
+  \label{fig:cursorreductionrules}
+\end{figure*}
+
+Since cursor movement follows the same reduction system as substitution, both
+the rules and the implementation are much akin to those of substitution. The
+rules state that we find the cursor and then move it up or down the tree with
+regards to the $\pi$ transition prefix.
+\\
+
+The implementation is divided into two functions; \elm{parent} that deals with
+parent rules and \elm{child} that deals with child rules. Both functions
+recursively find the cursor and rebuild a well-formed AST.
+
+The \elm{parent} function (see listing \ref{parent-function} in the appendix for
+the full version) pattern matches on the given well-formed AST. The interesting
+cases are the listed below. The cases that we chose to exclude simply rebuild
+the cursor context and call the function recursively.
+
+\begin{lstlisting}[language=elm,%
+                   label="parent-function",%
+                   gobble=4,%
+                   ]
+    Cursor _ ->
+        c
+
+    CApp1 (Cursor a1) a2 ->
+        Cursor <| App a1 a2
+
+    CApp2 a1 (Cursor a2) ->
+        Cursor <| App a1 a2
+
+    CLambda x tau (Cursor a1) ->
+        Cursor <| Lambda x tau a1
+
+    CBreak (Cursor a1) ->
+        Cursor <| Break a1
+\end{lstlisting}
+
+The first case matches if the cursor is already at the root. Without any type
+system we cannot guarantee that someone calls this function with the cursor at
+the root, so we just return the well-formed AST unchanged. The type system we
+have implemented will however make sure this function is not called in this
+case. The rest of the cases simply move the cursor from a child and up according
+to their corresponding rule.
+
+The \elm{child} function is divided into two by calling either \elm{childOne} or
+\elm{childTwo}, depending on which child we want to navigate to.
+
+\begin{lstlisting}[language=elm,%
+                   label="child-function",%
+                   gobble=4,%
+                   ]
+    child : Child -> WellFormedAst -> WellFormedAst
+    child c =
+        case c of
+            One ->
+                childOne
+
+            Two ->
+                childTwo
+\end{lstlisting}
+
+The \elm{childOne} and \elm{childTwo} functions (see listings
+\ref{childOne-function} and \ref{childTwo-function} in the appendix for the full
+versions) first find the cursor and rebuild the cursor context. After finding
+the cursor, we pattern match on the AST under the cursor.
+
+The pattern matching on the AST under the cursor in \elm{childOne} can be seen
+in the following listing.
+
+\begin{lstlisting}[language=elm,%
+                   label="interesting-childOne-cases",%
+                   gobble=4,%
+                   ]
+    case a of
+        App a1 a2 ->
+            CApp1 (Cursor a1) a2
+
+        Lambda x tau a1 ->
+            CLambda x tau <| Cursor a1
+
+        Break a1 ->
+            CBreak <| Cursor a1
+
+        _ ->
+            c
+\end{lstlisting}
+
+The first three cases handle rules \hyperref[fig:cursorreductionrules]{(APPC-1),
+(ABSC) and (BREAKC)} respectively.
+
+Similarly, the pattern matching on the AST under the cursor in \elm{childTwo}
+can be seen in the following listing.
+
+\begin{lstlisting}[language=elm,%
+                   label="interesting-childTwo-cases",%
+                   gobble=4,%
+                   ]
+    case a of
+        App a1 a2 ->
+            CApp2 a1 (Cursor a2)
+
+        _ ->
+            c
+\end{lstlisting}
+
+
+The first case handles rule \hyperref[fig:cursorreductionrules]{(APPC-2)}, where
+we move the cursor to the second child of an application.
+
+Neither \elm{childOne} nor \elm{childTwo} can guarantee that the functions are
+not called when no valid child exists without a type system. As such, both
+functions have a final case that matches anything, and return the well-formed
+AST unchanged. The type system we have implemented will however guarantee that
+these functions are not called in such cases.
+
+\subsection{Conditions}
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)   & $\AtHole$   \\
+    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK)  & $\AtBreak$  \\
+    \scriptsize(POS-TRIVIAL) & $\PosTrivial$ & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
+    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$ &   \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
+    \scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK) & $\NecBreak$
+  \end{tabular}
+  \caption{Condition reduction rules}
+  \label{fig:conditionreductionrules}
+\end{figure*}
+
+The system for reducing logical conditions is simply that of modal logic with
+the addition of three modalities; $\at$ (pronounced "at"), $\possibly$
+(pronounced "possibly" or "diamond") and $\necessarily$ (pronounced
+"necessarily" or "box"). The rules are written in figure
+\ref{fig:conditionreductionrules}. We use the modality $\at$ as the trivial
+logical case, where an arbitrary AST node models $\at$ at the corresponding
+node modifier, e.g. $\hole \models \at \text{hole}$. The semantics of the
+trivial cases are described by the rules
+\hyperref[fig:conditionreductionrules]{(AT-...)}. For the modality $\possibly$
+we first check if any of the trivial $\at$ rules hold for the given AST node
+and node modifier, described in rule
+\hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If it is not the trivial
+case, but the AST node is an abstraction, breakpoint or application, we check
+if $\possibly$ holds for the subtrees beneath, described in rules
+\hyperref[fig:conditionreductionrules]{(POS-ABS), (POS-BREAK), (POS-APP-1) and
+(POS-APP-2)}. Notice here that for applications, $\possibly$ only needs to hold
+for one of the AST node children in order to satisfy $\possibly \text{app}$. A
+condition with the $\necessarily$ modality holds under the same clauses as
+$\possibly$, since it is either trivial or holds for an AST node at which its
+children satisfy $\possibly$, described in the four
+\hyperref[fig:conditionreductionrules]{(NEC-...)} rules. However,
+$\possibly\text{app}$ and $\necessarily\text{app}$ is handled differently in
+that $\possibly$ holds when $\possibly$ holds for one of the AST node children,
+whereas $\necessarily$ holds when $\possibly$ holds for both the AST node
+children. \\
+
+In the implementation, the $\elm{eval}$ function for reducing $\pi$ editor
+expressions consists of a pattern match over the given condition $\phi$ of type
+$\elm{Eed}$. The match will reduce negation, conjunction and disjunction by
+modal logic semantics and recursive calls, and the match will reduce an
+expression hole with the $\elm{never}$ function as usual. Matching to the
+condition $@$, $\possibly$ or $\necessarily$ is handled by extracting the
+subtree at the cursors location in the given AST and then calling either the
+function $\elm{isEquivalent}$, $\elm{possibly}$ or $\elm{necessarily}$ on the
+subtree and the node modifier of the condition.
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed",%
+                   gobble=0,%
+                   ]
+{-Eed-}
+eval phi a =
+    case phi of
+        Neg phi1 ->
+            not <| eval phi1 a
+
+        Conjunction phi1 phi2 ->
+            eval phi1 a && eval phi2 a
+
+        Disjunction phi1 phi2 ->
+            eval phi1 a || eval phi2 a
+
+        At d ->
+            Aam.isEquivalent <| Ast.underCursor a
+
+        Possibly d ->
+            possibly d <| Ast.underCursor a
+
+        Necessarily d ->
+            necessarily d <| Ast.underCursor a
+
+        EedHole n ->
+            never n
+\end{lstlisting}
+~
+
+The three functions $\elm{isEquivalent}$, $\elm{possibly}$ and
+$\elm{necessarily}$ all have the signature
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed-signature",%
+                   gobble=0,%
+                   ]
+Aam.Completed -> Ast -> Bool
+\end{lstlisting}
+The node modifier is completed, but the AST is not well-formed since it
+is the AST under the cursor from the last function. Hence we only expose
+$\elm{eval}$ and none of the other functions, such that we still can only
+evaluate completed editor expressions and well-formed ASTs with a type-level
+guarantee from Elm. \\
+
+For the $\elm{isEquivalent}$ function the
+\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
+pattern match over the parameters.
+The function applies the rules very straightforwardly such that if one of the
+clauses holds then it returns $\elm{True}$ and if not then it returns
+$\elm{False}$, where the only addition is the usual $\elm{never}$ function
+for a node modifier hole. In rule
+\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
+constants have to be equal or just some constant in order for $\at(\const c)$ to
+hold. We chose that the constants must be equal.
+For all three of the functions, we discard unused parameters of the term
+constructors, such as variable IDs and type annotations.
+\begin{lstlisting}[language=elm,%
+                   label="eval-aam-isequivalent",%
+                   gobble=0,%
+                   ]
+isEquivalent d a =
+    case ( d, a ) of
+        ( Var _, Ast.Var _ ) ->
+            True
+
+        ( Const c1, Ast.Const c2 ) ->
+            c1 == c2
+
+        ( App _ _, Ast.App _ _ ) ->
+            True
+
+        ( Lambda _ _ _, Ast.Lambda _ _ _ ) ->
+            True
+
+        ( Break, Ast.Break _ ) ->
+            True
+
+        ( Hole _, Ast.Hole _ ) ->
+            True
+
+        ( AamHole n, _ ) ->
+            never n
+
+         _ ->
+             False
+
+\end{lstlisting}
+
+The $\elm{possibly}$ function is reduced by first checking whether we have the
+trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
+not, we check whether any of the other rules holds, i.e. if we are at an
+application, abstraction or breakpoint, it calls recursively on the children of
+the AST node. It deviates from the rules in that it combine the rules
+\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
+or-operator.
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed-possibly",%
+                   gobble=4,%
+                   ]
+    possibly d a =
+        (case a of
+            Ast.App a1 a2 ->
+                possibly d a1 || possibly d a2
+
+            Ast.Lambda _ _ a1 ->
+                possibly d a1
+
+            Ast.Break a1 ->
+                possibly d a1
+
+            _ ->
+                False
+        )
+            || Aam.isEquivalent d a
+\end{lstlisting}
+~
+The $\elm{necessarily}$ function is implemented in the same manner as
+$\elm{possible}$, with the only difference being if it is not the trivial case
+and the AST node is an application, then it uses a logical and-operator instead
+of a logical or-operator.
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed-necessarily",%
+                   gobble=0,%
+                   ]
+necessarily d a =
+    (case a of
+        Ast.App a1 a2 ->
+            possibly d a1 && possibly d a2
+        Ast.Lambda _ _ a1 ->
+            possibly d a1
+
+        Ast.Break a1 ->
+            possibly d a1
+
+        _ ->
+            False
+    )
+        || Aam.isEquivalent d a
+\end{lstlisting}

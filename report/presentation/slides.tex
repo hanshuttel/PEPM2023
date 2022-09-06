@@ -1,0 +1,362 @@
+\documentclass{beamer}
+
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+\usepackage{../assets/style}
+
+\title{Implementation of a Type-Safe Structure Editor}
+\author{Tórur, Thorbjørn \& Nicolaj}
+\institute{University of Copenhagen}
+\date{\today}
+
+\begin{document}
+
+\input{../assets/commands.tex}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}
+    \frametitle{Outline}
+    \tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+    \frametitle{Introduction}
+    \setbeamercovered{transparent}
+
+    \begin{itemize}
+
+        \item A Type-Safe Structure Editor Calculus (Godiksen et al.)
+        \begin{itemize}
+            \item Motivations: Avoid Syntax Errors, Evaluating Incomplete
+                Programs
+                \pause
+            \item Configurations: ASTs \& Editor Expressions
+                \pause
+            \item Communicating System
+                \pause
+        \end{itemize}
+
+        \item Our goals
+        \begin{itemize}
+            \item Implement a working type-safe structure editor
+                \pause
+            \item Implement a usable type-safe structure editor
+                \pause
+            \item Implement the editor in a functional programming language
+                \pause
+            \item Maintain the strong guaranties from the calculus
+            \setbeamercovered{invisible}
+                \pause
+            \item Use as many monads as possible!
+        \end{itemize}
+
+    \end{itemize}
+\end{frame}
+
+\section{User Interface}
+
+\subsection{User Overview}
+
+\begin{frame}
+    \frametitle{User Interface}
+    \framesubtitle{Overview}
+    \fbox{\includegraphics[width=\textwidth]{../assets/editor.png}}
+\end{frame}
+
+\subsection{Visualizing ASTs}
+
+\begin{frame}
+    \frametitle{User Interface}
+    \framesubtitle{Visualizing ASTs}
+    \setbeamercovered{transparent}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+                \item Fixed scale
+                    \pause
+                \item View follows the cursor
+                    \pause
+                \item Custom zoom level
+                    \pause
+                \item Folding
+                    \pause
+                \item Constraints: Cursor jumps
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \includegraphics[width=\textwidth]{../assets/ast_root_cursor.png}
+            \phantom{Forced spacing}
+            \includegraphics[width=\textwidth]{../assets/ast_subtree_cursor.png}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\subsection{Editor Expression Builder}
+
+\begin{frame}
+    \frametitle{User Interface}
+    \framesubtitle{Editor Expression Builder}
+    \setbeamercovered{transparent}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+                \item Editor expression holes
+                    \pause
+                \item Editor expression completeness
+                    \pause
+                \item Substitute hole with atomic editor expression
+                \begin{itemize}
+                    \item Click on a hole
+                    \item Choose from list
+                    \item Repeat until completed
+                \end{itemize}
+                \pause
+                \item Save as macro
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \includegraphics[width=\textwidth]{../assets/exp-builder.png}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\section{Modelling}
+
+\subsection{ASTs}
+
+\begin{frame}[fragile]
+    \frametitle{Modelling}
+    \framesubtitle{ASTs}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+\begin{lstlisting}[basicstyle=\scriptsize]
+type Ast
+    = Var Var.Id
+    | Con Const.Value
+    | App Ast Ast
+    | Lambda Var.Id Ast
+    | Break Ast
+    | Hole
+
+type C
+    = Cursor Ast
+    | CApp1 C Ast
+    | CApp2 Ast C
+    | CLambda Var.Id C
+    | CBreak C
+\end{lstlisting}
+            \begin{itemize}
+                \item The cursor context is an opaque type
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{align*}
+                \Ast \\\\ \C \\ \aHat \\ \aDot
+            \end{align*}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\subsection{Editor Expressions}
+
+\begin{frame}
+    \frametitle{Modelling}
+    \framesubtitle{Editor Expressions}
+
+    \begin{definition}
+        \begin{align*}
+            \Edt \\ \Aep \\ \Aam \\ \Eed
+        \end{align*}
+    \end{definition}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Modelling}
+    \framesubtitle{Editor Expressions}
+
+    \begin{definition}
+        \begin{align*}
+            \Edt
+        \end{align*}
+    \end{definition}
+
+\begin{lstlisting}
+type Edt
+    = Pre Aep Edt
+    | Bicond Eed Edt Edt
+    | SeqComp Edt Edt
+    | Rec Var.Id Edt
+    | Call Var.Id
+    | Nil
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Modelling}
+    \framesubtitle{Unit \& Void}
+    \setbeamercovered{transparent}
+
+    \begin{itemize}
+        \item Unit
+        \begin{itemize}
+            \item A type with one constructor which is exposed
+            \item Can be constructed at any point from nothing
+            \item In elm
+\begin{lstlisting}
+type ()
+    = ()
+\end{lstlisting}
+        \pause
+
+        \end{itemize}
+        \item Void
+        \begin{itemize}
+            \item A type without any constructors
+            \item Can never be constructed
+            \item In elm
+\begin{lstlisting}
+type Never
+\end{lstlisting}
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Modelling}
+    \framesubtitle{Editor Expressions}
+
+\begin{lstlisting}
+type Edt
+    = Pre Aep Edt
+    | Bicond Eed Edt Edt
+    | SeqComp Edt Edt
+    | Rec Var.Id Edt
+    | Call Var.Id
+    | Nil
+
+type Aep = ...
+type Aam = ...
+type Eed = ...
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Modelling}
+    \framesubtitle{Editor Expressions}
+
+\begin{lstlisting}
+type Edt a
+    = Pre (Aep a) (Edt a)
+    | Bicond (Eed a) (Edt a) (Edt a)
+    | SeqComp (Edt a) (Edt a)
+    | Rec Var.Id (Edt a)
+    | Call Var.Id
+    | Nil
+    | EdtHole a
+
+type Aep a = ...
+type Aam a = ...
+type Eed a = ...
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Modelling}
+    \framesubtitle{Editor Expressions}
+
+\begin{lstlisting}
+type Edt a
+    = Pre (Aep a) (Edt a)
+    | Bicond (Eed a) (Edt a) (Edt a)
+    | SeqComp (Edt a) (Edt a)
+    | Rec Var.Id (Edt a)
+    | Call Var.Id
+    | Nil
+    | EdtHole a
+
+type Aep a = ...
+type Aam a = ...
+type Eed a = ...
+
+
+type alias Uncompleted
+    = Edt ()
+
+type alias Completed
+    = Edt Never
+\end{lstlisting}
+\end{frame}
+
+\section{Evaluation}
+
+\begin{frame}[fragile]
+    \frametitle{Evaluation}
+    \framesubtitle{Configurations}
+    \setbeamercovered{transparent}
+
+    \begin{itemize}
+        \item General signature for evaluation:
+\begin{lstlisting}
+edt -> WellFormedAst -> WellFormedAst
+\end{lstlisting}
+            \pause
+        \item Use case-of expressions to exhaustively handle all cases.
+            \pause
+        \item Making impossible states impossible
+\begin{lstlisting}
+never : Never -> a
+\end{lstlisting}
+    \end{itemize}
+\end{frame}
+
+\section{Upcoming}
+
+\begin{frame}
+    \frametitle{Upcoming}
+    \setbeamercovered{transparent}
+
+    \begin{itemize}
+        \item Evaluation of ASTs
+            \pause
+        \item Type System
+            \pause
+        \item Further visualization of ASTs
+            \pause
+        \item Niceties
+        \begin{itemize}
+            \item Keybinding
+                \pause
+            \item Save/load functionality
+                \pause
+            \item Macros
+                \pause
+            \item Support short-hand notation for editor expressions
+                \pause
+            \item Undo/redo
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \centering
+    \only<1>{
+        \huge{Thanks for coming to our TED Talk.}
+    }
+    \only<2>{
+        \huge{Questions?}
+    }
+\end{frame}
+
+\end{document}

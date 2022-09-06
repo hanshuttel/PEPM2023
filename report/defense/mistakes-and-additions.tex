@@ -1,0 +1,33 @@
+\section{Future additions}
+
+%\begin{frame}[fragile]
+%    \frametitle{Mistakes and Future Additions}
+%    \framesubtitle{Mistakes}
+%    The following case is in the \texttt{betaReduce} function in AST eval.
+%    \begin{lstlisting}
+%Break a1 ->
+%    Break <| betaReduce x a1 sub
+%    \end{lstlisting}
+%    I.e. it may perform beta reduction of ASTs beneath breakpoints.
+%    Hence it should end the beta-reduction recursion at a breakpoint.
+%    \begin{lstlisting}
+%Break a1 ->
+%    Break a1
+%    \end{lstlisting}
+%\end{frame}
+
+\begin{frame}
+    \frametitle{Future Additions}
+    \framesubtitle{Future Additions}
+    \begin{itemize}
+        \item Recursive expressions should be closed. (No free variables).
+              \begin{itemize}
+                  \item Our solution was to have free variables result in NIL.
+              \end{itemize}
+              \pause
+        \item Saving editor expressions as macros.
+              \pause
+        \item Adding keybindings to the editor.
+    \end{itemize}
+\end{frame}
+

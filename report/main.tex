@@ -1,0 +1,62 @@
+\documentclass[10pt,a4paper,english]{article}
+
+
+% Packages
+\input{assets/packages}
+
+% Style
+\input{assets/style.sty}
+
+% Header
+\input{assets/header.tex}
+
+% Commands
+\input{assets/commands.tex}
+
+% Document
+\begin{document}
+
+% Titlepage
+\begin{titlepage}
+    \pagenumbering{gobble}
+    \title{\mdtitle}
+    \author{\mdauthor}
+    \date{\mddate}
+    \maketitle
+    \tableofcontents
+\end{titlepage}
+\pagenumbering{arabic}
+
+% Sections
+\begin{multicols}{2}
+
+    \input{sections/abstract}
+
+    \input{sections/introduction}
+
+    \input{sections/preliminaries}
+
+    \input{sections/principles}
+
+    \input{sections/design}
+
+    \input{sections/modeling}
+
+    \input{sections/evaluation}
+
+    \input{sections/typechecking}
+
+    \input{sections/userinterface}
+
+    \newpage
+    \input{sections/conclusion}
+
+\end{multicols}
+
+\newpage
+\bibliography{sections/references}
+
+\newpage
+\input{sections/appendix}
+
+\end{document}

@@ -1,0 +1,43 @@
+\documentclass{beamer}
+
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+\usepackage{../assets/style}
+
+
+\title{Implementation of a Type-Safe Structure Editor}
+\author{Tórur, Thorbjørn \& Nicolaj}
+\institute{University of Copenhagen}
+\date{\today}
+
+\begin{document}
+\input{../assets/commands.tex}
+\setbeamercovered{transparent}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}
+    \frametitle{Outline}
+    \tableofcontents
+\end{frame}
+
+\include{introduction}
+
+\include{showcase}
+
+\include{mistakes-and-additions}
+
+\include{type-checking.tex}
+
+\include{discourse-analysis}
+
+\include{conclusion}
+
+\begin{frame}
+    \bibliography{../sections/references}
+\end{frame}
+
+\end{document}

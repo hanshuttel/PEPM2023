@@ -1,0 +1,1421 @@
+\section{Type checking}
+\label{type-checking}
+In the current iteration of the editor, there are a wide variety of invalid
+configurations that can cause run-time errors. These configurations include
+problems such as illegal cursor movement after an editor expression and invalid
+ASTs. In order to remove the possibility of these invalid configurations,
+Godiksen et al.\pepm ~introduce their type system. For the purpose of this type
+system, a number of restrictions are set upon editor expressions that together
+are used to define a well-formed editor expression. Furthermore we say that an
+editor expression must also be completed in order to be well-formed. The set of
+restrictions are as follows.
+\begin{quote}
+    \begin{itemize}
+        \item ``In conditional expressions, the cursor must end at the same
+              location regardless of which clause is executed, and in
+              recursive expressions, the cursor must return to its original
+              position.
+        \item Upon sequential composition, the left-side subexpression
+              only has access to the subtree that is within where the
+              cursor would be after reduction of this subexpression,
+              and the right-side subexpression only has access to the
+              remainder of the AST, only sharing the AST node exactly
+              at the cursor.
+        \item Cursor movement and substitution must be conditioned in
+              recursive expressions.''\pepm
+      \end{itemize}
+\end{quote}
+
+
+A configuration of a well-formed AST and a well-formed editor expression is
+likewise considered well-formed.\\
+
+As mentioned in section \ref{principles}, we type check with respect to a
+configuration. We say that a configuration is well-typed iff; the AST is both
+well-formed and well-typed in the empty AST context and the editor expression
+is both well-formed and well-typed for the path to the cursor in the AST and
+the editor context containing all valid paths in the AST \pepm. I.e. equation
+(\ref{eq:welltypedconf}) where $\emptyset$ is the empty AST context, $p$ is the
+path from the root to the cursor in $a$, and $\ctx{e}$ is the editor context
+containing some pair for each valid path in $a$. \\
+\begin{equation}\label{eq:welltypedconf}
+  \TConfiguration
+\end{equation}
+
+A well-typed configuration guarantees that the AST remains well-typed after
+reduction. \\
+
+In the implementation, we type check a configuration just before it is
+evaluated. Since we only have a single AST that we perpetually update and we
+know that the AST is always well-typed in the beginning (since we control the
+starting configuration) and well-formed throughout its lifetime (with a
+type-level guarantee from Elm), we could actually omit the type checking for
+the AST. However we want to model the calculus as close as possible and thus
+still do the full type check from equation (\ref{eq:welltypedconf}) of a
+configurations just before reduction.\\
+
+In this section we discuss types and auxiliary functions that we use for type
+checking, define the type rules and discuss the implementation of the actual
+type checker.
+
+\subsection{Context and path handling}
+Godiksen et al.\pepm~describe a number of ways to handle paths and contexts for
+type checking, including notations, operations, operators and restrictions.
+Let us start with contexts.\\
+
+Since the context type $\elm{Ctx}$ is treated as a custom data structure, we
+have implemented a suite of auxiliary functions for interacting with the type.
+There are functions for mapping over contexts, functions for instantiating
+either an empty or singleton context, functions for updating contexts, and
+functions for retrieving the size, keys and values from a context. There are
+four functions of interest that are important with regards to type checking.
+They are listed in figure \ref{fig:ctx-functions} and we will describe them in
+further detail in the next paragraphs.
+
+\begin{figure*}
+  \center
+  \noindent\begin{minipage}{.45\textwidth}
+    \begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+pop : Ctx a b -> Maybe (( a, b ), Ctx a b)
+pop c =
+    case c of
+        Ctx [] ->
+            Nothing
+
+        Ctx (x :: xs) ->
+            Just ( x, Ctx xs )
+----------------------------------------
+get : a -> Ctx a b -> Maybe b
+get k1 c =
+    case c of
+        Ctx [] ->
+            Nothing
+
+        Ctx (( k2, v ) :: xs) ->
+            if k1 == k2 then
+                Just v
+
+            else
+                get k1 (Ctx xs)
+\end{lstlisting}
+  \end{minipage}\hfill
+  \begin{minipage}{.45\textwidth}
+    \begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+bind : a -> b -> Ctx a b -> Ctx a b
+bind k1 v1 c =
+  case c of
+    Ctx [] ->
+      singleton k1 v1
+
+    Ctx (( k2, v2 ) :: xs) ->
+      if k1 == k2 then
+        push k1 v1 (Ctx xs)
+
+      else
+        push k2 v2 (bind k1 v1 (Ctx xs))
+----------------------------------------
+join : Ctx a b -> Ctx a b -> Ctx a b
+join c1 c2 =
+    case c2 of
+        Ctx [] ->
+            c1
+
+        Ctx (( k, v ) :: xs) ->
+            join (Ctx xs) <| bind k v c1
+\end{lstlisting}
+  \end{minipage}\hfill
+  \caption{Functions for type checking that handle the context data-structure in Elm}
+  \label{fig:ctx-functions}
+\end{figure*}
+
+Two of the functions are for retrieving specific entries. One of them is
+$\elm{pop}$, which --- given a context --- returns the first element in the
+context list together with the tail of the context. The return value is wrapped
+in a $\elm{Maybe}$ type such that given an empty context we get $\elm{Nothing}$.
+The other function is $\elm{get}$, which --- given a key and a context ---
+returns the value bound to the key. Again we wrap the output in a $\elm{Maybe}$
+type such that if the key is not found in the context, we return
+$\elm{Nothing}$. $\elm{get}$ is used for type rules and functions that want a
+specific binding, denoted $\ctx{a}(x)$ or $\ctx{e}(p)$, and $\elm{pop}$ is used
+when we just want some arbitrary binding.
+
+Then we have two functions for updating type contexts, $\elm{bind}$ and
+$\elm{join}$. They are used, respectively, whenever we add a new binding to a
+context, denoted $\ctx{e},\bind{p}{(\ctx{a},\tau)}$ or
+$\ctx{a},\bind{x}{\tau}$, and when we join two editor type contexts, defined by
+Godiksen et al. as in equation (\ref{eq:join}).\pepm
+
+\begin{equation}\label{eq:join}
+  \ctx{e}^1 + \ctx{e}^2 \triangleq \ctx{e}^1,\bind{p_1}{\ctx{e}^2(p_1)},...,\ctx{e}^1,\bind{p_n}{\ctx{e}^2(p_n)}
+\end{equation}
+\begin{center}
+  $\text{ where } \{p_1,...,p_n\} = dom(\ctx{e}^2)$~~~~~~~~~~~~~~~~~~~~~~~~~~
+\end{center}
+
+$\elm{bind}$ has a key, value and context as parameters and return the same
+context such that the key-value pair has been bound in it. If the key already
+exists, it updates the value of the key to the new one. It uses a function
+called $\elm{push}$ to simply add the pair to the front of the list.
+
+The other function $\elm{join}$ combines two given contexts by recursively
+calling $\elm{bind}$ on the head of the second context and the first context.
+Thus it combines the two where for overlapping keys it keeps the keys from the
+second context. \\
+
+Regarding paths, we again require some functionality for type checking, which
+we achieve by a suite of auxiliary functions, all of which have trivial
+implementations and thus the code is not listed. We have one function for
+shrinking a path by a child, one for extending a path by a child, one for
+getting the last child of a path, one for creating an empty path, one for
+concatenating a path with another path and finally one for computing the length
+of a path.
+
+Next we cover three concepts heavily intertwined in the type rules. The first
+one is that of $p\downarrow$, which denotes the set of subpaths of $p$ and is
+defined as $p\downarrow = \{p \overrightarrow{T} \mid \overrightarrow{T} \in
+  \ctyp^*\}$. In the implementation we use a function called $\elm{subpath}$ that
+given two paths determines whether the second one belongs to the subpath set of
+the first one. Furthermore, if it is a subpath, it also returns the difference
+of the paths, i.e. $\overrightarrow{T}$.
+\begin{lstlisting}[language=elm,%
+           gobble=0,%
+           ]
+subpath : Pth t -> Pth t -> Maybe (Pth t)
+subpath p1 p2 =
+\end{lstlisting}
+The first case is if $p_1 = \epsilon$. Then $p_2$ will be a subpath of
+$p_1$ no matter what.
+\begin{lstlisting}[language=elm,%
+           gobble=4,%
+           ]
+    case ( p1, p2 ) of
+        ( Epsilon, pth ) ->
+            Just pth
+\end{lstlisting}
+The second case is if the $p_2 = \epsilon$ and $p_1 \neq \epsilon$. Then $p_2$
+cannot be a subpath of $p_1$ and we return $\elm{Nothing}$.
+\begin{lstlisting}[language=elm,%
+           gobble=8,%
+           ]
+        ( Child _ _, Epsilon ) ->
+            Nothing
+\end{lstlisting}
+The last case is $p_1 \neq \epsilon$ and $p_2 \neq \epsilon$. Here we check if
+the immediate children are equal. If they are, we call recursively on the
+tailing paths, and if not, then $p_2$ cannot be a subpath of $p_1$ and we
+return $\elm{Nothing}$.
+\begin{lstlisting}[language=elm,%
+           gobble=8,%
+           ]
+        ( Child p1_ x, Child p2_ y ) ->
+            if x == y then
+                subpath p1_ p2_
+
+            else
+                Nothing
+\end{lstlisting}
+
+The two other concepts involves that of domain restrictions on editor type
+contexts $\ctx{e}$. In Godiksen et al.\pepm~they have a thorough mathematical
+description of restrictions, but we will instead infer two different
+restriction function concepts and requirements, as they are sufficient and more
+translatable for the implementation. The notations are $p~\ctx{e}$ and
+$\bar{p}~\ctx{e}$. $p~\ctx{e}$ denotes that the editor type context $\ctx{e}$
+is restricted such that it only contains bindings with paths of subpath of $p$.
+I.e. bindings are restricted to paths in the set $p\downarrow$. Similarly,
+$\bar{p}~\ctx{e}$ denotes that the editor type context $\ctx{e}$ is restricted
+such that it does not contain bindings with paths of subpath of $p$, except
+path $p$ itself. I.e. bindings are restricted to paths not in the set
+$p\downarrow\setminus \{p\}$.
+
+In implementation we call these functions $\elm{restrictPath}$ and
+$\elm{restrictBarPath}$, respectively. They work by recursively popping
+bindings from the given editor type context until the context is the empty
+context. Each recursion uses the $\elm{subpath}$ function to determine whether
+or not the path of the binding is a subpath of $p$. Depending on the result
+from $\elm{subpath}$, it either rebinds the popped binding to --- or returns ---
+the context that has been build at a deeper recursion-level. The implementation
+of $\elm{restrictPath}$ and $\elm{restrictBarPath}$ are listed in figure
+\ref{fig:domainrestrictions}.
+
+\begin{figure*}
+  \center
+  \noindent\begin{minipage}{.49\textwidth}
+    \begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+restrictPath : Ast.Pth -> ECtx -> ECtx
+restrictPath p ectx =
+   case Ctx.pop ectx of
+      Just ( ( p_, actx ), ectx_ ) ->
+         case Pth.subpath p p_ of
+            Just _ ->
+               Ctx.bind p_ actx
+                  <| restrictPath p ectx_
+
+            Nothing ->
+               restrictPath p ectx_
+
+      Nothing ->
+         ectx
+\end{lstlisting}
+  \end{minipage}\hfill
+  \begin{minipage}{.49\textwidth}
+    \begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+restrictBarPath : Ast.Pth -> ECtx -> ECtx
+restrictBarPath p ectx =
+  case Ctx.pop ectx of
+     Just ( ( p_, actx ), ectx_ ) ->
+        case Pth.subpath p p_ of
+          Just (Pth.Epsilon) ->
+             Ctx.bind p_ actx
+               <| restrictBarPath p ectx_
+
+          Nothing ->
+             Ctx.bind p_ actx
+               <| restrictBarPath p ectx_
+
+          Just _ ->
+             restrictBarPath p ectx_
+
+     Nothing ->
+        ectx
+\end{lstlisting}
+  \end{minipage}\hfill
+  \caption{Functions for computing $p~\ctx{e}$ and $\bar{p}~\ctx{e}$ in Elm}
+  \label{fig:domainrestrictions}
+\end{figure*}
+
+\subsection{Type checking auxiliary functions}
+
+Throughout the type rules, we use functions to help judge editor expressions as
+well as determine whether cursor movements are safe or not.
+
+The first function, \texttt{path}, takes a pair of a path and an editor
+expression and returns the resulting path after the reduction of the given
+expression relative to the given path. It is defined by the following cases:
+
+\begin{align}
+  path(p,~(\child{1}).E)           & = path(p~\mathtt{one},~E) \\
+  path(p,~(\child{2}).E)           & = path(p~\mathtt{two},~E) \\
+  path(p~T,~ \parent.E)            & = path(p,~E)              \\
+  path(p,~\bicond{\phi}{E_1}{E_2}) & = path(p,~E_1)            \\
+  path(p,~E_1 \ggg E_2)            & = path(path(p,~E_1),~E_2)      \\
+  path(p,~\pi.E)                   & = path(p,~E)              \\
+  path(p,~E)                       & = p
+\end{align}
+
+The function is used for certain type rules for editor expressions, such as
+sequential expressions, where it at the path to the cursor for an expression
+$E_1 \ggg E_2$ computes the path resulting from $E_1$ and uses that to type
+check $E_2$. The type rules are discussed in detail in a separate subsection.
+
+Our implementation of the function is defined with the following type and
+formal parameters. Taking a path and completed editor expression and resulting
+in the new path corresponding to the path we would get if the editor expression
+were reduced.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    path : Ast.Pth -> Completed -> Ast.Pth
+    path p e =
+\end{lstlisting}
+
+The function structure follows the same logic as the definition, implemented
+by pattern matching each case.
+
+The first three cases are for when the editor expression is a prefix command,
+specifically when this prefix command is either $\child{\texttt{one}}$,
+$\child{\texttt{two}}$ or $\parent$ respectively. For the cases with child
+prefixes, we simply recursively call \texttt{path} again but with the path of
+the child, while for the parent case we recursively call \texttt{path} with the
+path of the parent.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( _, Pre (Aep.Child Ast.One) e1 ) ->
+        path (Pth.extend p Ast.One) e1
+
+    ( _, Pre (Aep.Child Ast.Two) e1 ) ->
+        path (Pth.extend p Ast.Two) e1
+
+    ( Pth.Child p1 _, Pre Aep.Parent e1 ) ->
+        path p1 e1
+\end{lstlisting}
+
+The fourth case is when the editor expression is a bi-conditional expression.
+Here we have that, as a result of a restriction for having well-formed editor
+expressions, the path must be the same, regardless of which condition passes.
+Therefore we just call \texttt{path} with $E_1$ as the argument.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( _, Bicond _ e1 _ ) ->
+    path p e1
+\end{lstlisting}
+
+For sequential editor expressions we have a nested recursive call, making sure
+that the resulting path after reducing $E_2$ use the resulting path of $E_1$.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( _, SeqComp e1 e2 ) ->
+    path (path p e1) e2
+\end{lstlisting}
+
+Penultimately we have the rest of the prefix command cases, which only includes
+$\eval$. This is a trivial case where we discard the prefix and recursively
+call \texttt{path}.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( _, Pre _ e1 ) ->
+    path p e1
+\end{lstlisting}
+
+Lastly we have the base case, covering recursive editor expressions, recursive
+calls and the empty editor expression. Because of the restrictions for having
+well-formed editor expressions, recursion does not change the path. Here we
+stop the recursive $\texttt{path}$ calls and return the path $p$.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    _ ->
+        p
+\end{lstlisting}
+
+The next two functions are both used for deciding which cursor movements are
+safe depending on a given condition. The function \texttt{limits} takes two
+arguments; a condition and a subset of node modifiers, and returns the subset
+of node modifiers that the cursor may be at given that the condition holds.
+Godiksen et al. defines \texttt{limits} by the following cases, where the
+condition $\phi$ must be in conjunctive normal form.
+\begin{align*}
+    limits(@D,~S) &= \{ D \} \\
+    limits(\neg@D,~S) &= S \setminus \{ D \} \\
+    limits(\possibly D,~S) &= S \cap (\{ D \} \cup \{ \aamApp, \aamLambda{x}, \aamBreak\}) \\
+    limits(\neg\possibly D,~S) &= S \setminus \{ D \}  \\
+    limits(\necessarily D,~S) &= S \cap (\{ D \} \cup \{ \aamApp, \aamLambda{x}, \aamBreak\})  \\
+    limits(\neg\necessarily D,~S) &= S \setminus \{ D \}  \\
+    limits(\phi_1 \land \phi_2,~S) &= limits(\phi_2,~limits(\phi_1,~S)) \\
+    limits(\phi_1 \lor \phi_2,~S) &= limits(\phi_1,~S) \cup limits(\phi_2,~S) \\
+    limits(\phi,~S) &= S
+\end{align*}
+
+For our implementation of the function we use our implemented $\elm{Set}$ data
+structure we mentioned earlier in this paper. The function has the following
+type and formal parameters.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    limits : Eed a -> Set (Aam a) -> Set (Aam a)
+    limits phi s =
+\end{lstlisting}
+The first two cases are for conditions of the $@$ modality. Here we have that
+given the condition $\at{D}$ holds, we return the subset of D, while given the
+condition $\neg\at{D}$ holds, we return the S without the subset of D, as we
+for sure know that the cursor cannot be at the subset of $D$. This is generally
+the case for all cases that include the negation of a modality.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        At d ->
+            Set.singleton d
+
+        Neg (At d) ->
+            Set.remove d s
+\end{lstlisting}
+The next two cases are for conditions of the $\possibly$ modality. For these
+cases, given the condition $\possibly D$ holds, we return the intersection of
+the set S with the union of the subset containing D with the subset containing
+application, abstraction and breakpoint. This is because that $\possibly$ can
+hold on those three modifiers even when $D$ is not any of them, and it can also
+hold on the modifier $D$ itself. In the implementation we use the
+$\elm{fromList}$ function to construct the set we intersect $S$ with. This is
+the same as taking the union of constructed the singleton sets, as
+$\elm{fromList}$ also checks for duplicate elements.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Possibly d ->
+        [ Aam.Lambda (Var.id "x") Ast.TIndeterminate Ast.TIndeterminate
+        , Aam.Break
+        , Aam.App Ast.TIndeterminate Ast.TIndeterminate
+        , d
+        ]
+            |> Set.fromList
+            |> Set.intersect s
+
+    Neg (Possibly d) ->
+        Set.remove d s
+\end{lstlisting}
+For cases where the condition includes the $\necessarily$ modality, we do the
+exact same as with cases where $\possibly$ appear.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Necessarily d ->
+        [ Aam.Lambda (Var.id "x") Ast.TIndeterminate Ast.TIndeterminate
+        , Aam.Break
+        , Aam.App Ast.TIndeterminate Ast.TIndeterminate
+        , d
+        ]
+            |> Set.fromList
+            |> Set.intersect s
+
+    Neg (Necessarily d) ->
+        Set.remove d s
+\end{lstlisting}
+For the third and second to last, we have some recursive cases. The first case
+covers conjunction. Given both conditions holds, we recursively call
+\texttt{limits} with the second condition as the first argument and the
+limits-set of the first condition and $S$ as the second argument. The other
+case covers disjunction. Here we return the union of the limits-sets that are
+returned by recursively calling \texttt{limits} individually on each condition
+and the set $S$.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Conjunction phi1 phi2 ->
+        limits phi2 <| limits phi1 s
+
+    Disjunction phi1 phi2 ->
+        Set.union (limits phi1 s) (limits phi2 s)
+\end{lstlisting}
+Lastly, we have the base case where we simply catch every other possibility.
+For this we just return the set S.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    _ ->
+        s
+\end{lstlisting}
+
+The \texttt{follows} function takes a node modifier and a path to the cursor as
+arguments and returns the power set of editor context bindings - i.e.
+$\mathcal{P}(\pth \times (\actx \times \atyp)))$ - that are known to be safe if
+the cursor is located at the node modifier D. The definition is as follows.
+% Kunne ikke lade være
+\begin{align*}
+  follows(\var{x},~p) &= \emptyset \\
+  follows(\const{c},~p) &= \emptyset \\
+  follows(\aamApp,~p) &= \{(p~\texttt{one},~(\emptyset,~?)), (p~\texttt{two},~(\emptyset,~?))\} \\
+  follows(\aamLambda{x},~p) &= \{(p~\texttt{one},~(\emptyset,~?))\} \\
+  follows(\aamBreak,~p) &= \{(p~\texttt{one},~(\emptyset,~?))\} \\
+  follows(\aamHole,~p) &= \emptyset
+\end{align*}
+We define the function with the following type and arguments, where we again use the $\elm{Set}$ we implemented.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    follows : Aam a -> Pth Ast.Child -> Set ( Pth Ast.Child, ( Ast.ACtx, Ast.ATyp ) )
+    follows a p =
+\end{lstlisting}
+The first two cases are trivial. As variables and constants have no children,
+there are no possible further movement down from these nodes and no safe
+context bindings. We then simply return the empty set.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Var x ->
+        Set.empty
+
+    Const c ->
+        Set.empty
+\end{lstlisting}
+For applications we have two possible paths and therefore we have two
+guaranteed safe editor context bindings. Our $\elm{Set}$ does not allow for
+instantiating sets with two entries, so for this case we insert the safe editor
+type context binding of the first path to the singleton set of the second path,
+noting that the AST type context is empty and the AST type is indeterminate.
+
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        App _ _ ->
+            Set.insert
+                ( Pth.extend Pth.empty Ast.One
+                , ( Ctx.empty
+                  , Ast.TIndeterminate
+                  )
+                )
+            <|
+                Set.singleton
+                    ( Pth.extend Pth.empty Ast.Two
+                    , ( Ctx.empty
+                      , Ast.TIndeterminate
+                      )
+                    )
+\end{lstlisting}
+For abstractions and breakpoints we also know that there is exactly one path
+from the node. That means for each case there is a single possible editor type
+context binding which we return. Also here we note that there can be no
+information about the AST type context and AST type at this point.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        Lambda x _ _ ->
+            Set.singleton
+                ( Pth.extend Pth.empty Ast.One
+                , ( Ctx.empty
+                  , Ast.TIndeterminate
+                  )
+                )
+
+        Break ->
+            Set.singleton
+                ( Pth.extend Pth.empty Ast.One
+                , ( Ctx.empty
+                  , Ast.TIndeterminate
+                  )
+                )
+\end{lstlisting}
+The two last cases are again trivial, while also deviating slightly from the
+calculus as a result of our addition of the \elm{AamHole} term constructor.
+However, for both cases we know that there can be no safe paths so we return
+the empty set.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Hole _ ->
+        Set.empty
+
+    AamHole _ ->
+        Set.empty
+\end{lstlisting}
+
+We also note that we can use \texttt{limits} and \texttt{follows} to find the
+set of safe editor type context bindings given a condition holds. Specifically
+the safe bindings are the intersection of the sets from \texttt{follows} called
+on every node modifier in the set from \texttt{limits}.\\
+
+In Godiksen et al.\pepm~they define an $update$ function that is used to update
+editor type contexts $\ctx{e}$ given a context and a set of bindings. They
+define it the following way.
+\begin{align*}
+&update(\ctx{e},\emptyset)=\ctx{e})\\
+&update(\ctx{e},B\cup\{(p,~(\ctx{a},~\tau))\})=update((\ctx{e},\bind{p}{N}),B)\\
+&~~~~\text{where } N =
+    \begin{cases}
+      (\ctx{a},~\tau) ~~~~~~~~~~\text{if}~\ctx{e}(p) =~\texttt{undef} \\
+      (\ctx{a}' + \ctx{a},~\tau) ~~~\text{if}~\ctx{e}(p) = (\ctx{a}',~?) \\
+      (\ctx{a}' + \ctx{a},~\tau') ~~\text{if}~\ctx{e}(p) = (\ctx{a}',~\tau') \\
+    \end{cases}\\
+\end{align*}
+The implemented function has the following signature.
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+update : Set ( Ast.Pth,
+       ( Ast.ACtx, Ast.ATyp ) ) -> ECtx -> ECtx
+update s ectx =
+\end{lstlisting}
+We $\elm{pop}$ a binding from the set of bindings and pattern match and if we
+get $\elm{Nothing}$ we have the first clause.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    case Set.pop s of
+        Nothing ->
+            ectx
+\end{lstlisting}
+If $\elm{pop}$ returns a binding, we look it up in the editor type context and
+decide $N$ to the corresponding case from the definition.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        Just ( ( p, ( actx, atyp ) ), b ) ->
+          case Ctx.get p ectx of
+            Nothing ->
+              update b
+                <| Ctx.bind p ( actx, atyp ) ectx
+
+            Just ( actx_, Ast.TIndeterminate ) ->
+              update b
+                <| Ctx.bind p
+                  ( Ctx.join actx_ actx, atyp ) ectx
+
+            Just ( actx_, atyp_ ) ->
+              update b
+                <| Ctx.bind p
+                  ( Ctx.join actx_ actx, atyp_ ) ectx
+\end{lstlisting}
+
+
+
+For the purpose of gaining type information about variables and subtrees under
+the cursor, the function \texttt{types} is introduced. The function takes a pair
+of a condition and an AST type context and provides guaranteed information about
+the subtree if the given condition holds. Contrary to the earlier functions, we
+do not care about negated conditions here, as they do not provide any
+information about what types they are, but rather what they are not. For this
+function, Godiksen et al. introduce two type conditions, $\Theta \tau$ and
+$\Theta x : \tau$. These two type conditions are intended to lessen the loss of
+expressiveness resulted from the described restrictions on editor expressions.
+$\Theta \tau$ holds iff the AST surrounded by the cursor is exactly $\tau$ while
+$\theta x$ holds iff the variable $x$ has type $\tau$. Their definition can be
+seen below.
+
+\begin{align*}
+    \text{(TYC-AST) } &\frac{\emptyset \vdash [C\cursor{\hat{a}}] : \tau_2~~\ctx{a}\vdash \hat{a} : \tau }{C[\cursor{\hat{a}}] \models \Theta \tau}\\\\
+    \text{(TYC-VAR) } &\frac{\emptyset \vdash [C\cursor{\hat{a}}] : \tau_2~~\ctx{a}\vdash \hat{a} : \tau_1 ~~~~ \ctx{a}(x) = \tau }{C[\cursor{\hat{a}}] \models \Theta x : \tau}
+\end{align*}
+
+We then define the function \elm{types}.
+
+\begin{align*}
+    &types( \Theta \tau_1,~(\ctx{a},~\tau_2)) = (\ctx{a},~\tau_1)\\
+    &types( \bind{\Theta x}{\tau_1},~(\ctx{a},~\tau_2)) = ((\ctx{a},~\bind{x}{\tau_1}), \tau_2)\\
+    &types( \phi_1 \land \phi_2,~(\ctx{a},~\tau)) = types(\phi_2,~types(\phi_1,~(\ctx{a},~\tau)))\\
+    &types( \phi_1 \lor \phi_2,~(\ctx{a},~\tau)) =
+    \begin{cases}
+        (\Gamma_a^\prime,~\tau) ~~~~\text{if}~\tau \neq ~? \\
+        (\Gamma_a^\prime,~\tau_1) ~~~\text{if}~\tau_1 = \tau_2 \\
+        (\Gamma_a^\prime,~?) ~~~~\text{if}~\tau_1 \neq \tau_2
+    \end{cases}\\
+    &~~~\text{where } types(\phi_1,~(\emptyset,~\tau)) = (\Gamma_a^1,~\tau_1)\\
+    &~~~\text{and } types(\phi_2,~(\emptyset,~\tau)) = (\Gamma_a^2,~\tau_2)\\
+    &~~~\text{and } \{x_1,..,x_n\}  = \\
+    &~~~~~~\{x~\in~dom(\Gamma_a^1)\cap dom(\Gamma_a^2) ~|~ \Gamma_a^1(x)=\Gamma_a^2(x)\}\\
+    &~~~\text{and } \Gamma_a^\prime = \Gamma_a, \bind{x_1}{\Gamma_a^1}(x_1),...,\bind{x_n}{\Gamma_a^1}(x_n)\\
+    &types(\phi,~(\Gamma_a,~\tau)) = (\Gamma_a,~\tau)
+\end{align*}
+
+We only partially implemented this function as we had problems implementing type
+conditions $\Theta \tau$ and $\Theta x : \tau$ in time. As such, the first two
+cases of the \texttt{types} function are missing from our implementation.
+
+The \elm{types} function takes an \elm{Eed} --- which we bind to \elm{d} --- and
+a tuple \elm{( Ast.ACtx, Ast.ATyp )} --- which we bind to \elm{(gamma, tau)} ---
+and returns new tuple of the same type. We pattern match on \elm{d}.
+
+The first case we have implemented takes care of conjunction. We simply call
+\elm{types} on each operand recursively as seen in the following case.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Conjunction phi1 phi2 ->
+        types phi2 <| types phi1 ( gamma, tau )
+\end{lstlisting}
+
+Disjunction is a bit more involved. The pattern we match on is
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    Disjunction phi1 phi2 ->
+\end{lstlisting}
+
+First we define \elm{gamma\_a\_1},
+\elm{tau\_1}, \elm{gamma\_a\_2}, \elm{tau\_2}, \elm{xs}, and \elm{gamma\_a\_p} which
+correspond to $\Gamma_a^1$, $\tau_1$, $\Gamma_a^2$, $\tau_2$, $\{ x_1 ..., x_n
+\}$, and $\Gamma_a '$ respectively.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( gamma_a_1, tau_1 ) =
+        types phi1 ( Ctx.empty, tau )
+
+    ( gamma_a_2, tau_2 ) =
+        types phi2 ( Ctx.empty, tau )
+
+    xs =
+        Set.filter
+            (\x -> Ctx.get x gamma_a_1 == Ctx.get x gamma_a_2)
+        <|
+            Set.intersect
+                (Ctx.identifiers gamma_a_1)
+                (Ctx.identifiers gamma_a_2)
+
+    gamma_a_p =
+        Set.foldl
+            (\x acc ->
+                Ctx.bind
+                    x
+                    (Maybe.withDefault Ast.TIndeterminate (Ctx.get x gamma_a_1))
+                    acc
+            )
+            gamma
+            xs
+\end{lstlisting}
+
+We are now ready to implement the three cases in the disjunction case. We use
+if-then-else expressions to check which case we should apply and return
+accordingly.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    if tau /= Ast.TIndeterminate then
+        ( gamma_a_p, tau )
+
+    else if tau_1 == tau_2 then
+        ( gamma_a_p, tau_1 )
+
+    else
+        ( gamma_a_p, Ast.TIndeterminate )
+\end{lstlisting}
+
+Lastly, we have the trivial case where we just return the tuple as is if no
+other case matched.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    _ ->
+        (gamma, tau)
+\end{lstlisting}
+~
+
+The auxiliary function \texttt{toggle} is introduced for toggling breakpoint
+types on or off from a given path $p$ and editor context $\ctx{e}$. We note
+that the function is undefined for cases where $\ctx{e}(p) = undef$.
+\begin{align*}
+    &toggle(p,~(\ctx{e},~\bind{p}{(\ctx{a},~?)})) \\
+    &~~~~= \bar{p}(\ctx{e},~\bind{p}{(\ctx{a},~?)}) \\
+    &toggle(p,~(\emptyset,~\bind{p}{(\ctx{a},~\breakpoint{\tau})})) \\
+    &~~~~= \emptyset,~\bind{p}{(\ctx{a},~\tau)} \\
+    &toggle(p,~(\emptyset,~\bind{p}{(\ctx{a},~\breakpoint{\tau})},~\bind{p~one}{(\ctx{a},~\tau)})) \\
+    &~~~~= \emptyset,~\bind{p}{(\ctx{a},~\tau)} \\
+    &toggle(p,~(\emptyset,~\bind{p}{(\ctx{a},~\tau)})) \\
+    &~~~~= \emptyset,~\bind{p}{(\ctx{a},~\breakpoint{\tau})},~\bind{p~one}{(\ctx{a},~\tau)} \\
+    &toggle(p,~(\ctx{e},~\bind{p}{(\ctx{a},~\breakpoint{\tau})},~\bind{p~one~T_1..T_n}{(\ctx{a}^\prime,~\tau^\prime)})) \\
+    &~~~~= toggle(p,~(\ctx{e},~\bind{p}{(\ctx{a},~\breakpoint{\tau})})), \bind{p~T_1..T_n}{(\ctx{a}^\prime,~\tau^\prime)} \\
+    &toggle(p,~(\ctx{e},~\bind{p}{(\ctx{a},~\tau)},~\bind{p~T_1..T_n}{(\ctx{a}^\prime,~\tau^\prime)})) \\
+    &~~~~= toggle(p,~(\ctx{e},~\bind{p}{(\ctx{a},~\tau)})), \bind{p~one~T_1..T_n}{(\ctx{a}^\prime,~\tau^\prime)} \\
+    &toggle(p_1,~(\ctx{e},~\bind{p_2}{(\ctx{a},~\tau)})) \\
+    &~~~~= toggle(p_1,~\ctx{e}),~\bind{p_2}{(\ctx{a},~\tau)}\text{ if }p_2 \notin p_1 \downarrow
+\end{align*}
+
+We implemented $\elm{toggle}$ with the following signature.
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+toggle : Ast.Pth -> ECtx -> ECtx
+toggle p ectx =
+\end{lstlisting}
+As usual we do a pattern match in order to check the clauses of the definition.
+The case we match over are however unusual complicated. We match over three
+values where the first is $\ctx{e}(p)$, the second is $\ctx{e}(p~\texttt{one})$
+and the third is the size of $\ctx{e}$ (size as in number of bindings). We use
+the size in clause 2, 3 and 4 to check that the editor type context is empty
+except for the other bindings we match over.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    case ( Ctx.get p ectx, Ctx.get (Pth.extend p Ast.One) ectx, Ctx.size ectx ) of
+\end{lstlisting}
+
+For the implementation we requiring a helper function, which we will reason
+about in a bit. For the first case we handle the special situation of
+indeterminate types. When this case is hit we are unable to decide whether or
+not to toggle a breakpoint, which is why we restrict the context to
+$\bar{p}\ctx{e}$
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( Just ( _, Ast.TIndeterminate ), _, _ ) ->
+       restrictBarPath p ectx
+\end{lstlisting}
+
+The next three cases are the base cases that handle the actual toggling of
+breakpoints. Case two and four mirror each other, where for case two we match
+on a breakpoint and toggle if off by binding the path to the editor context,
+with the type annotation unwrapped from the breakpoint. Case four as mentioned
+is when we want to toggle the breakpoint on, which we do by binding the path to
+the editor context with the type wrapped by a breakpoint and extending the path
+of the old context by one. The third case is where we have the path that is
+bound to an editor context with a breakpoint and we have the path beneath that
+is bound to the context under the breakpoint. We cannot match on this only with
+a pattern match as we have to make sure that the AST type contexts and type
+annotations are corresponding in relation to the breakpoint. We handle this
+with an if-statement, where, if they are not the same we instead call a helper
+function \elm{toggle\_}. And if it is neither case 1, 2, 3 or 4, we also call $\elm{toggle\_}$.
+
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    ( Just ( actx, Ast.TBreak atyp ), _, 1 ) ->
+        Ctx.singleton p ( actx, atyp )
+
+    ( Just ( actx1, Ast.TBreak atyp1 ), Just ( actx2, Ast.TBreak atyp2 ), 2 ) ->
+        if actx1 == actx2 && atyp1 == atyp2 then
+            Ctx.singleton p ( actx1, atyp1 )
+
+        else
+            toggle_ p ectx
+
+    ( Just ( actx, atyp ), _, 1 ) ->
+        Ctx.bind p ( actx, Ast.TBreak atyp ) <|
+            Ctx.singleton (Pth.extend p Ast.One)
+                ( actx, atyp )
+
+    _ ->
+        toggle_ p ectx
+\end{lstlisting}
+The helper function \elm{toggle\_} is implemented as a fall-through function
+i.e. a way to continue from patterns that match on case 3 without passing the
+if-statement. However the information which we pattern match over changes in
+$\elm{toggle\_}$ as we do not need the size of the context nor
+$\ctx{e}(p~\texttt{one})$ anymore. We do however still need $\ctx{e}(p)$ and
+then some other binding in the context. We use $\elm{pop}$ to get the other
+binding.
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+toggle_ : Ast.Pth -> ECtx -> ECtx
+toggle_ p ectx =
+    case ( Ctx.get p ectx, Ctx.pop ectx ) of
+\end{lstlisting}
+However this will always match to the following pattern, since if it did not
+then $\ctx{e}(p) = \texttt{ undef}$ and the function semantics becomes
+undefined.
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+( Just ( actx, Ast.TBreak atyp ),
+  Just ( ( p1, actx1 ), ectx1 ) ) ->
+\end{lstlisting}
+From here we use different $\elm{Pth}$ functions to check for case 5, 6 and 7.
+Most notably is pattern matches over the $\elm{subpath}$ function together with
+the use of $\elm{concat}$ function. The implementation models the rules
+straightforwardly.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        case Pth.subpath (Pth.extend p Ast.One) p1 of
+            Just p2 ->
+                Ctx.bind (Pth.concat p p2) actx1
+                    <| toggle p ectx1
+
+            Nothing ->
+                case Pth.subpath p p1 of
+                    Just p2 ->
+                        Ctx.bind (Pth.concat
+                            (Pth.extend p Ast.One)
+                            p2) actx1
+                                <| toggle p ectx1
+
+                    Nothing ->
+                        Ctx.bind p1 actx1
+                            <| toggle p ectx1
+\end{lstlisting}
+
+\subsection{Type rules}
+
+We show the type rules for AST type judgments in figure \ref{fig:asttyperules}
+and type rules for editor expression type judgments in figure
+\ref{fig:edttyperules}, as they are defined by Godiksen et al. \pepm. In this
+subsection we will argue for the type rules and go over how we implemented
+them, starting with AST type rules.\\
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(T-VAR)    & $ \TVar $   & \scriptsize(T-CONST) & $ \TConst$ & \scriptsize(T-CURSOR) & $ \TCursor $ \\
+    \scriptsize(T-LAMBDA) & $ \TLambda$ & \scriptsize(T-BREAK) & $\TBreak$  & \scriptsize(T-HOLE)   & $\THole$     \\
+    \scriptsize(T-APP)    & $\TApp$     &                      &            &                       &
+  \end{tabular}
+  \caption{AST type rules}
+  \label{fig:asttyperules}
+\end{figure*}
+
+AST type judgment calls carry the information of an AST type context $\ctx{a}$
+around to use for rules \hyperref[fig:asttyperules]{(T-VAR) and (T-LAMBDA)}.
+They define that we find the type of a $\lambda$-abstraction by binding the type
+from the variable type annotation in the AST type context. Then we check
+the type of the subtree in the context of the new binding, wrapping the
+result in an abstraction type. We then find the result of a variable by looking
+the variable up in the type context. Hence variables outside of an abstraction
+have no type binding and are not well-typed.
+
+The AST type rules \hyperref[fig:asttyperules]{(T-CONST), (T-CURSOR) and
+(T-BREAK)} simply define that constant nodes are always well-typed and have the
+base type, cursor nodes are well-typed if the subtree under the cursor is
+well-typed and they have the same type as their subtree, and breakpoint nodes
+are like cursor nodes except they wrap the type of the subtree in a breakpoint
+type.
+
+The last two AST type rules \hyperref[fig:asttyperules]{(T-HOLE) and (T-APP)}
+define that hole nodes are always well-typed and they have the same type as
+the hole itself carries as type information and that application nodes are
+well-typed if both the first child is well-typed and has a abstraction type,
+and if the second child is well-typed and the type of it is consistent with the
+corresponding input-type of the abstraction type. Well-typed application nodes
+have the same type as the output type of its first child abstraction type. \\
+
+We have implemented the AST type rules in a function called $\elm{Ast.typed}$.
+There are two notable types in its signature. The first being that the AST
+argument is of type $\elm{Ast}$. I.e. the AST is not well-formed. The reason
+being that because of rule \hyperref[fig:asttyperules]{(T-CURSOR)} the type
+does not change if we omit the cursor. And without a cursor, the pattern match
+becomes much simpler than having individual functions and pattern matches for
+well-formed ASTs and the ASTs under the cursor. However this makes it such that
+we do not expose $\elm{Ast.typed}$ to keep the type guarantee of ASTs being
+well-formed in the editor. In the next subsection we will discuss how we handle
+the unexposure. The second notable thing is that the return type is a
+$\elm{Maybe ATyp}$. The reason is that $\elm{Nothing}$ indicates the AST is
+ill-typed and $\elm{Just atyp}$ indicates that the AST is well-typed and has
+the type $\elm{atyp}$.
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+typed : Ast -> ACtx -> Maybe ATyp
+typed a actx =
+\end{lstlisting}
+The \elm{typed} function pattern matches on the given AST. The three trivial
+cases are for variables, constants and holes, where we use the type context,
+base type and type annotation, respectively.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    case a of
+        Var x ->
+            Ctx.get x actx
+
+        Const _ ->
+            Just TBase
+
+        Hole tau ->
+            Just tau
+\end{lstlisting}
+Abstractions and breakpoints follows the rules straight forward by checking
+judging the type of the subtree below and then wrapping it in their own
+respective types, remembering to add a binding to the context for abstractions.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        Lambda x tau a_ ->
+            Maybe.map (TLambda tau) <|
+                typed a_ <|
+                    Ctx.bind x tau actx
+
+        Break a_ ->
+            Maybe.map TBreak <| typed a_ actx
+\end{lstlisting}
+Lastly for applications we type judge its children and check for consistency.
+By unwrapping the types in a pattern match we can that the input to the
+abstraction type is consistent instead of the whole abstraction type. We simply
+return the result type of the abstraction.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        App a1 a2 ->
+          case ( typed a1 actx, typed a2 actx ) of
+            ( Just (TLambda tau1 atyp), Just tau2 ) ->
+               if isConsistent tau1 tau2 then
+                  Just atyp
+
+               else
+                  Nothing
+
+            _ ->
+               Nothing
+\end{lstlisting}
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llll}
+    \scriptsize(T-CH-1)      & $ \TChOne $             & \scriptsize(T-REF)       & $ \TRef$                \\
+    \scriptsize(T-CH-2)       & $ \TChTwo$               & \scriptsize(T-EVAL)      & $\TEval$               \\
+    \scriptsize(T-PARENT)      & $ \TParent$             & \scriptsize(T-NIL)    & $\TNil$              \\
+    \scriptsize(T-SEQ)       & \scriptsize$\TSeq$ & &\\
+    \scriptsize(T-REC)       & \scriptsize$\TRec$   & &   \\
+    \scriptsize(T-COND)      & \scriptsize$ \TCond$  & &\\
+    \scriptsize(T-SUB-VAR)   & $ \TSubVar$            &           & \\
+    \scriptsize(T-SUB-CONST) & $ \TSubConst$      & &\\
+    \scriptsize(T-SUB-HOLE)  & $\TSubHole$ & &           \\
+    \scriptsize(T-SUB-ABS)   & \scriptsize$\TSubAbs$   & & \\
+    \scriptsize(T-SUB-APP)   & \scriptsize$ \TSubApp$ & & \\
+    \scriptsize(T-SUB-BREAK) & \scriptsize$\TSubBreak$ & &
+  \end{tabular}
+  \caption{Editor expression type rules}
+  \label{fig:edttyperules}
+\end{figure*}
+~
+
+Editor expression type judgments are a bit more involved. We will describe a
+select number of rules and their implementation at a time. The rules are
+implemented in a function called $\elm{Edt.typed}$. Since editor expressions
+get their type information from AST and not themselves, we use $\elm{Bool}$ as
+return type rather than $\elm{Maybe}$ as we did for AST rules. We require that
+the editor expression is completed. \elm{typed} pattern matches on a given
+editor expression and type checks on a case by case basis.
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+typed : Ast.Pth -> ECtx -> Completed -> Bool
+typed p ectx edt =
+\end{lstlisting}
+
+Lets start by going over the trivial rules. These are the ones that define
+well-typedness for the empty editor expression $\nil$, recursive calls to $x$ in
+recursive editor expressions $\rec{x}{E}$, and prefix commands where $\pi \neq
+\sub{D}$. Said rules are \hyperref[fig:asttyperules]{(T-NIL), (T-REF), (T-EVAL),
+(T-CH-1), (T-CH-2) and (T-PARENT)}. The empty editor expression is always
+well-typed and a call to $x$ is also always well-typed, since if $x$ is bound,
+we know from the rule \hyperref[fig:asttyperules]{(T-REC)} that the bound editor
+expression is well-typed, and if it is not bound, we simply say that it is the
+empty editor expression $\nil$. Regarding the trivial prefix command type rules,
+we have that $\pi = \eval$ is well-typed if $E$ is well-typed (because $\eval$
+has no implications on the configuration). Prefix commands where $\pi = \child
+n$ are well-typed if the extended path exists in the AST after cursor movement
+and if $E$ is well-typed after cursor movement. Likewise, prefix commands where
+$\pi = \parent$ are well-typed if the shortened path to the parent exists in the
+AST and $E$ is well-typed after cursor movement.
+
+The implementation of these 5 rules are straight forward, except we combine
+\hyperref[fig:asttyperules]{(T-CH-1) and (T-CH-2)} into one case over the child
+variable $\elm{t}$.
+\begin{lstlisting}[language=elm,%
+    gobble=4,%
+    ]
+    case edt of
+        Pre Aep.Eval e ->
+            typed p ectx e
+
+        Call _ ->
+            True
+
+        Nil ->
+            True
+
+        Pre (Aep.Child t) e ->
+            let
+                p_ =
+                    Pth.extend p t
+            in
+            case Ctx.get p_ ectx of
+                Just _ ->
+                    typed p_ ectx e
+
+                Nothing ->
+                    False
+
+        Pre Aep.Parent e ->
+            let
+                p_ =
+                    Pth.shrink p
+            in
+            case Ctx.get p_ ectx of
+                Just _ ->
+                    typed p_ ectx e
+
+                Nothing ->
+                    False
+\end{lstlisting}
+The rule for sequential composition \hyperref[fig:asttyperules]{(T-SEQ)} uses
+the auxiliary function $\elm{path}$ to compute the path after reducing the first
+editor expression, $p'$. Because of the requirements for well-formedness we type
+judge the first editor expression in the editor type context restricted to $p'$
+and the second editor expression in the editor type context restricted to
+$\bar{p'}$. In the implementation we use the $\elm{path}$, $\elm{restrictPath}$
+and $\elm{restrictBarPath}$ functions to do the computation.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        SeqComp e1 e2 ->
+            let
+                p_ =
+                    path p e1
+            in
+            typed p (restrictPath p_ ectx) e1
+             && typed p_ (restrictBarPath p_ ectx) e2
+\end{lstlisting}
+The rule for recursive expressions is \hyperref[fig:asttyperules]{(T-REC)}.
+Because of well-formedness, we make sure that the path after reduction is the
+same as the current path. We use the $\elm{path}$ function to check this.
+Recursion is well-typed if the given path is a valid path and if the next editor
+expression is well-typed for the empty editor type context where the given path
+is bound to something unknown (empty AST context and indeterminate type). The
+implementation is straight forward.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        Rec _ e ->
+            if path p e == p then
+                case Ctx.get p ectx of
+                    Just _ ->
+                        typed p (Ctx.bind p ( Ctx.empty, Ast.TIndeterminate ) Ctx.empty) e
+
+                    Nothing ->
+                        False
+
+            else
+                False
+\end{lstlisting}
+The rule for biconditional expressions \hyperref[fig:asttyperules]{(T-COND)}
+use the auxiliary functions $\elm{path}$, $\elm{types}$, $\elm{limits}$,
+$\elm{update}$ and $\elm{types}$. Since we did not complete the implementation
+of $\elm{types}$, we unfortunately omit this rule from our implementation.\\
+
+Now for the substitution type rules. We have three trivial rules
+\hyperref[fig:asttyperules]{(T-SUB-VAR), (T-SUB-CONST) and (T-SUB-HOLE)}. The
+rules all have the same structure, where we first check that the editor type
+context has a binding for the path. Then we find the type of the substitution
+node modifier. We then check if the found type is consistent with the current
+AST node. Lastly we check that the next editor expression is well-typed in the
+editor type context restricted to $\bar{p}$ (since all subtrees are substituted
+away after reduction) with a binding for the new node. The implementation are
+straight forwardly doing these checks. For substitutions of variables we check
+whether the type of the AST under the cursor is consistent with the type of the
+new variable. For substitutions of constants the type of the constant should be
+consistent with the base type. For holes we check whether the type of the
+binding is consistent with the type of the hole.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        Pre (Aep.Sub (Aam.Var x)) e ->
+          case Ctx.get p ectx of
+            Just ( actx, atyp ) ->
+              case Ctx.get x actx of
+                Just atyp_ ->
+                  Ast.isConsistent atyp atyp_
+                    && typed p (Ctx.bind p ( actx, atyp_ ) (restrictBarPath p ectx)) e
+
+                Nothing ->
+                  False
+
+            Nothing ->
+              False
+
+        Pre (Aep.Sub (Aam.Const c)) e ->
+          case Ctx.get p ectx of
+            Just ( actx, atyp ) ->
+              Ast.isConsistent atyp Ast.TBase
+                && typed p (Ctx.bind p ( actx, Ast.TBase ) (restrictBarPath p ectx)) e
+
+            Nothing ->
+              False
+
+        Pre (Aep.Sub (Aam.Hole tau)) e ->
+          case Ctx.get p ectx of
+            Just binding ->
+              if Ast.isConsistent tau (Tuple.second binding) then
+                typed p (Ctx.bind p binding (restrictBarPath p ectx)) e
+
+              else
+                False
+
+            Nothing ->
+              False
+\end{lstlisting}
+The rule for substituting breakpoints
+\hyperref[fig:asttyperules]{(T-SUB-BREAK)} says the breakpoint substitutions
+are well-typed if the next editor expression is well-typed in the context where
+the breakpoint has been toggled by the $\elm{toggle}$ function.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        Pre (Aep.Sub Aam.Break) e ->
+            typed p (toggle p ectx) e
+\end{lstlisting}
+Unfortunately we did not implement the rules for application and abstraction
+substitution \hyperref[fig:asttyperules]{(T-SUB-APP) and (T-SUB-ABS)}, and we
+will not describe them. Lastly we say the expression is ill-typed if none of
+these rules apply.
+\begin{lstlisting}[language=elm,%
+    gobble=8,%
+    ]
+        _ ->
+            False
+\end{lstlisting}
+
+
+\subsection{Type checker}
+
+We have defined a predicate function \elm{wellTyped} that type checks a
+configuration. As arguments it takes a \elm{WellFormedAst} and a \elm{Completed} and returns a $\elm{Bool}$.
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+wellTyped : WellFormedAst -> Completed -> Bool
+wellTyped c edt =
+    typed (Ast.pthToCursor c) (findCtx
+            (Ast.fromC c) Pth.empty
+            Ctx.empty) edt
+        && Ast.wellTyped c Ctx.empty
+\end{lstlisting}
+
+The function uses two helper predicates \elm{typed} and \elm{Ast.wellTyped} to
+determine if the given editor expression and AST are well-typed respectively.
+These predicate functions corresponds to the two type judgements that must hold
+for the definition of a well-typed configuration in equation
+(\ref{eq:welltypedconf}). $\elm{typed}$ refers the $\elm{Edt.typed}$ from last
+subsection. To find the path to the cursor, it uses the helper function
+$\elm{pthToCursor}$ and to find the editor type context containing a binding
+for each valid path in $a$ it uses $\elm{findCtx}$. Let us first go over the
+predicate $\elm{Ast.wellTyped}$.\\
+
+The \elm{Ast.wellTyped} function also has a helper function called \elm{typed}.
+This refers the the $\elm{Ast.typed}$ from the last subsection where we
+discussed that $\elm{typed}$ omits the cursor and was not exposed. We handle
+this by exposing the $\elm{wellTyped}$ function instead, which takes a
+well-formed AST, and removes the cursor from here. We also convert the return
+type to $\elm{Bool}$ instead of $\elm{Maybe ATyp}$. As long as $\elm{typed}$
+does not return $\elm{Nothing}$, $\elm{wellTyped}$ returns $\elm{True}$.
+\begin{lstlisting}[language=elm,%
+                   gobble=4,%
+                   ]
+    wellTyped : WellFormedAst -> ACtx -> Bool
+    wellTyped c actx =
+        typed (fromC c) actx /= Nothing
+\end{lstlisting}
+~
+
+The function $\elm{pthToCursor}$ recursively iterates through the AST while
+extending the path to the next recursive call accordingly until it finds the
+cursor and returns the empty path. E.g. the two first cases of the function are
+as follows.
+\begin{lstlisting}[language=elm,%
+                   gobble=8,%
+                   ]
+        Cursor a ->
+            Pth.empty
+
+        CApp1 c1 _ ->
+\end{lstlisting}
+~
+
+The function \elm{findCtx} takes an AST, AST type context and a path as
+arguments and returns an editor type context. For the initial call from
+$\elm{Edt.wellTyped}$, the context and path are empty and the AST is the
+well-formed AST with the cursor removed. We pattern match over the AST.
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+findCtx : Ast -> Ast.Pth -> Ast.ACtx -> ECtx
+findCtx ast pth actx =
+    case ast of
+\end{lstlisting}
+The three trivial cases that stops the recursion are AST variable, constant and
+hole nodes. If the variable is not defined in the context, we bind the type
+associated with the path to an indeterminate type.
+\begin{lstlisting}[language=elm,%
+                   gobble=8,%
+                   ]
+        Ast.Var x ->
+            case Ctx.get x actx of
+                Just tau ->
+                    Ctx.singleton pth ( actx, tau )
+
+                Nothing ->
+                    Ctx.singleton pth
+                       ( actx, Ast.TIndeterminate )
+
+        Ast.Const c ->
+            Ctx.singleton pth ( actx, Ast.TBase )
+
+        Ast.Hole tau ->
+            Ctx.singleton pth ( actx, tau )
+\end{lstlisting}
+If the AST node at the path is $\lambda$, we extend the path and bind the
+variable in the AST type context and use them for a recursive call. We then use
+the recursively build editor type context to find the $\tau_2$ in the
+abstraction $\tau_1\to\tau_2$ and bind this in the context together with the
+updated AST type context.
+\begin{lstlisting}[language=elm,%
+                   gobble=8,%
+                   ]
+        Ast.Lambda x tau a1 ->
+            let
+                p1 =
+                    Pth.extend pth Ast.One
+
+                actx1 =
+                    Ctx.bind x tau actx
+
+                ectx1 =
+                    findCtx a1 p1 actx1
+
+                atyp1 =
+                    case Ctx.get p1 ectx1 of
+                        Just ( _, t ) ->
+                            t
+
+                        Nothing ->
+                            Ast.TIndeterminate
+            in
+            Ctx.bind pth
+              ( actx1, Ast.TLambda tau atyp1 ) ectx1
+\end{lstlisting}
+If we have a breakpoint we take the same approach as with an abstraction i.e.
+we find the recursively built editor type context and the type of the AST node
+from the context.
+\begin{lstlisting}[language=elm,%
+                   gobble=8,%
+                   ]
+        Ast.Break a1 ->
+            let
+                p1 =
+                    Pth.extend pth Ast.One
+
+                ectx1 =
+                    findCtx a1 p1 actx
+
+                atyp1 =
+                    case Ctx.get p1 ectx1 of
+                        Just ( _, t ) ->
+                            t
+
+                        Nothing ->
+                            Ast.TIndeterminate
+            in
+            Ctx.bind pth
+                ( actx, Ast.TBreak atyp1 ) ectx1
+\end{lstlisting}
+Application nodes also follow the same approach. Since we get two recursively
+built editor type contexts, we use the $\elm{join}$ operator to construct the
+result context, and bind the appropriate type in the context.
+\begin{lstlisting}[language=elm,%
+                   gobble=8,%
+                   ]
+        Ast.App a1 a2 ->
+            let
+                p1 =
+                    Pth.extend pth Ast.One
+
+                p2 =
+                    Pth.extend pth Ast.Two
+
+                ectx1 =
+                    findCtx a1 p1 actx
+
+                ectx2 =
+                    findCtx a2 p2 actx
+
+                atyp1 =
+                    case Ctx.get p1 ectx1 of
+                      Just ( _, Ast.TLambda t1 t2 ) ->
+                        t2
+
+                      _ ->
+                        Ast.TIndeterminate
+            in
+            Ctx.join ectx1 ectx2
+                |> Ctx.bind pth ( actx, atyp1 )
+\end{lstlisting}
+~
+
+In order to type check a configuration we would simply have to pass it to
+$\elm{wellTyped}$ which will tell us if it is well-typed or not. However we
+actually never call $\elm{wellTyped}$ in the implementation as three of the
+type rules for editor expressions are not implemented.
+

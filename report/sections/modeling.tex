@@ -1,0 +1,821 @@
+\section{Modeling}
+\label{modeling}
+
+In this section we will discuss the design decisions we have taken when modeling
+the editor. We have focused on leveraging the types of Elm to model the editor
+calculus as closely as possible without introducing additional constructions.
+
+\subsection{Set and Ctx}
+
+Before we continue with the discussion on modeling, we will go on a short
+tangent on two custom types we have defined, since we use these types throughout
+this section and section \ref{type-checking}.
+
+In Elm, we have a type constructor \elm{Set a} that represents mathematical
+sets. This type is defined in a module along with functions for working with
+this type. Most of these functions require the elements \elm{a} of a \elm{Set a}
+to be an instance of the \elm{comparable} type class. The problem is that Elm
+does not allow making types instances of type classes (instead there are a few
+predefined type classes and instances), and as such, we are very limited in what
+can put in such sets. Because of this we decided to implement our own \elm{Set
+a} type constructor, as seen in listing \ref{listing:extra-set}, in the module
+\elm{Extra.Set}. Whenever we refer to \elm{Set a} in this paper, we refer to our
+custom type.
+
+\begin{lstlisting}[language=elm,%
+                   label={listing:extra-set},%
+                   gobble=4,%
+                   caption={Our own \elm{Set a}.},%
+                   ]
+    type Set a
+        = Set (List a)
+\end{lstlisting}
+
+A similar issue arises with the \elm{Dict k v} type constructor. \elm{Dict k v}
+is a data structure that stores associations between keys \elm{k} and values
+\elm{v}. Most functions that work with \elm{Dict k v} require the type of the
+key to be an instance of the \elm{comparable} type class. We have implemented
+our own version of \elm{Dict k v}, as seen in listing \ref{listing:ctx}, but we
+have called it \elm{Ctx a b}, as we use it for type contexts.
+
+\begin{lstlisting}[language=elm,%
+                   label={listing:ctx},%
+                   gobble=4,%
+                   caption={Our own version of \elm{Dict k v}.},%
+                   ]
+    type Ctx a b
+        = Ctx (List ( a, b ))
+\end{lstlisting}
+
+\subsection{Abstract syntax trees}
+Abstract syntax trees are defined by the formation rules (\ref{formationA}),
+and as such, each node is either a variable, constant, application,
+abstraction, cursor, breakpoint or hole.
+\begin{align}
+    \Ast\label{formationA}
+\end{align}
+
+We can model ASTs using custom types, where every formation rule
+in equation (\ref{formationA}) from Godiksen et al. $\pepm$ has its term
+constructor. However, we will omit the cursor term constructor, as we will
+introduce a cursor through a cursor context in the next subsection.
+
+\begin{lstlisting}[language=elm,%
+                   label={ast-definition},%
+                   gobble=4,%
+                   caption={Formation rules (\ref{formationA}) modeled in Elm},%
+                   ]
+    type Ast
+        = Var Var.Id
+        | Const Const.Value
+        | App Ast Ast
+        | Lambda Var.Id Ast
+        | Break Ast
+        | Hole
+\end{lstlisting}
+
+Most of the term constructors take arguments that contain the information of
+either the given node or its children, depending on if it is a leaf or not. From
+these constructor arguments, we introduce two new types; variable IDs and
+constant values. These are not defined in the calculus of which this project is
+based on \pepm, and thus they are implementation specific.
+
+Variables are implemented as a custom type named \elm{Id}, where its constructor takes a \elm{String}~as argument.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+type Id = Id String
+\end{lstlisting}
+
+Constant values are more interesting in that they dictate what constant types
+the editor should work with. We have created a \elm{Const}-module with
+extensibility in mind such that it can easily be extended to support more
+constant types by adding new term constructors and pattern matching cases.
+However, we have only implemented support for integers for this project.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   ]
+type Value = IntVal Int
+\end{lstlisting}
+
+\subsection{Cursor contexts}
+
+A cursor context C is given by the formation rules in equation
+(\ref{formationC1}) and (\ref{formationHat}), where $\hat{a}$ is an AST without
+a cursor. A well-formed AST is formed by $C[\dot{a}]$, where well-formedness is
+defined by the AST having exactly one cursor. The formation rule for $\dot{a}$
+is that of equation (\ref{formationDot}).
+\begin{align}
+    \C \label{formationC1}    \\
+    \aHat\label{formationHat} \\
+    \aDot\label{formationDot}
+\end{align}
+
+In Godiksen et al. \pepm, the cursor context is defined in order to both locate
+a cursor within an AST, and to ensure that one, and only one cursor exists
+within an AST.
+
+When implementing the editor, we redesigned the formation for $\dot{a}$ such
+that it only has the clause $\llbracket\hat{a}\rrbracket$. This is equivalent to
+the cursor context defined in the paper since all other clauses of $\dot{a}$ can
+be formed by a combination of $C$ and $\llbracket\hat{a}\rrbracket$. Furthermore
+we model $\dot{a}$ implicitly in the formation of $C$ by substituting the first
+clause of $C$ by the only clause of the new $\dot{a}$. As such, we have modeled
+the cursor context using custom types after the formation rules of equation
+(\ref{formationC2}) and (\ref{formationHat}). This is simpler in implementation
+since we only have two data types instead of three.
+
+\begin{align}\label{formationC2}
+    C ::= \llbracket \hat{a} \rrbracket
+    \mid \app{C}{\hat{a}}
+    \mid \app{\hat{a}}{C}
+    \mid \abs{x}{C}
+    \mid \breakpoint{C}
+\end{align}
+
+Originally we decided against modeling the cursor context directly and instead
+did it indirectly with the way we defined ASTs. Firstly, we added the cursor as
+a term constructor for ASTs.
+
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+type Ast
+    = Var Var.Id
+    | Con Const.Value
+    | App Ast Ast
+    | Lambda Var.Id Ast
+    | Break Ast
+    | Hole
+    | Cursor Ast
+\end{lstlisting}
+
+We then created the opaque type \elm{WellFormedAst} which encapsulated an
+AST. Since the type was opaque, we had full control over it in the \elm{Ast}
+module, and could guarantee that an AST that was not well-formed would never be
+injected into the \elm{WellFormedAst} type.
+
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    ]
+type WellFormedAst
+    = WellFormed Ast
+\end{lstlisting}
+
+We then created a function that returned an ``empty'' \elm{WellFormedAst},
+i.e. a cursor with a hole inside. This assured us that an AST always started out
+as well-formed.
+
+We could then have any exposed function that worked with ASTs take a
+\elm{WellFormedAst} and know that it would remain well-formed as we know from
+the editor calculus by Godiksen et al. \pepm.
+
+In order to locate the cursor in an AST, we would simply traverse the AST to
+find the cursor. Because the AST was well-formed, we knew that we would find a
+cursor, and only one. After the cursor was located, we could do any operation at
+that location, such as substituting what was under the cursor.
+
+% Explain why this is a bad approach
+
+We eventually decided against this approach, because it made it more complicated
+to find the cursor, as we potentially have to traverse through the entire AST to
+find it. Secondly, it generally just made more sense to keep the guarantees from
+the calculus by modeling it directly. \\
+
+% Explain the direct modeling approach
+
+To model the cursor context directly, we model the cursor context type as seen
+in listing \ref{ast-definition} and \ref{cursor-context-formation-elm}.
+
+\begin{lstlisting}[language=elm,%
+                   label={cursor-context-formation-elm},%
+                   gobble=4,%
+                   caption={Formation rules (\ref{formationC2}) modeled in Elm},%
+                   ]
+    type C
+        = Cursor Ast
+        | CApp1 C Ast
+        | CApp2 Ast C
+        | CLambda Var.Id C
+        | CBreak C
+\end{lstlisting}
+
+
+To ensure that an AST is well-formed, we have defined a module for ASTs where
+its term constructors for $\hat{a}$ are exposed but the cursor context $C$ is an
+opaque type. This means that an AST can always be constructed outside the
+module, but a cursor context cannot be constructed outside the module such that
+we have full control over how it is constructed and manipulated. We then expose
+some functions that construct well-formed ASTs and require that all functions
+with ASTs as parameters must take a well-formed AST. These functions are
+implemented using the reduction rules from the paper, and as such (given that
+the functions are correctly implemented) return well-formed ASTs.
+\begin{lstlisting}[language=elm,%
+                   label={cursor-context-alias-elm},%
+                   gobble=0,%
+                   caption={Type alias for well-formed ASTs in Elm},%
+                   ]
+type alias WellFormedAst = C
+\end{lstlisting}
+
+
+For accessing the AST under the cursor, we define the function
+\texttt{underCursor}. The function takes a well-formed AST and returns the AST
+under the cursor.
+
+\begin{lstlisting}[language=elm,%
+    label="underCursor",%
+    gobble=4,%
+    ]
+    underCursor : WellFormedAst -> Ast
+    underCursor c =
+        case c of
+            Cursor a ->
+                a
+
+            CApp1 c1 _ ->
+                underCursor c1
+
+            CApp2 _ c2 ->
+                underCursor c2
+
+            CLambda _ c1 ->
+                underCursor c1
+
+            CBreak c1 ->
+                underCursor c1
+\end{lstlisting}
+
+\subsection{Editor expressions}
+
+Editor expressions are directly modeled using the formation rules given in the
+article by Godiksen et al.\pepm.
+
+\begin{align}
+    \Aep \label{aep-formation-rules} \\
+    \Eed \label{eed-formation-rules} \\
+    \Edt \label{edt-formation-rules} \\
+    \Aam \label{aam-formation-rules}
+\end{align}
+
+As an example, in equation (\ref{aep-formation-rules}) we have four rules for $\pi$; one
+for evaluation, one for substitution and two for cursor navigation. We model
+this as a custom type with four term constructors:
+
+\begin{lstlisting}[language=elm,%
+                   label={aep-without-holes-definition},%
+                   gobble=4,%
+                   caption={Formation rules (\ref{aep-formation-rules}) modeled in Elm},%
+                   ]
+    type Aep
+        = Eval
+        | Sub Aam
+        | Child Ast.Child
+        | Parent
+\end{lstlisting}
+
+The rest of the formation rules are defined similarly, as seen in figures
+\ref{eed-without-holes-definitions}, \ref{edt-without-holes-definitions} and
+\ref{aam-without-holes-definitions}.
+
+\begin{lstlisting}[language=elm,%
+           label={eed-without-holes-definitions},%
+           gobble=4,%
+           caption={Formation rules (\ref{eed-formation-rules}) modeled in Elm},%
+           ]
+    type Eed
+        = Neg Eed
+        | Conjunction Eed Eed
+        | Disjunction Eed Eed
+        | At Aam
+        | Possibly Aam
+        | Necessarily Aam
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+           label={edt-without-holes-definitions},%
+           gobble=4,%
+           caption={Formation rules (\ref{edt-formation-rules}) modeled in Elm},%
+           ]
+    type Edt
+        = Pre Aep Edt
+        | Bicond Eed Edt Edt
+        | SeqComp Edt Edt
+        | Rec Var.Id Edt
+        | Call Var.Id
+        | Nil
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+           label={aam-without-holes-definitions},%
+           gobble=4,%
+           caption={Formation rules (\ref{aam-formation-rules}) modeled in Elm},%
+           ]
+    type Aam
+        = Var Var.Id
+        | Con Const.Value
+        | App
+        | Lambda Var.Id
+        | Break
+        | Hole
+\end{lstlisting}
+
+Some term constructors take arguments. A \elm{Sub} constructor, for example,
+takes an \elm{Aam}, and a \elm{Child} constructor takes an AST child. Of these
+arguments, we have just one new type that is not yet modeled; AST children.
+
+AST children have the type $T \in \ctyp$, and are formed by the formation rules
+(\ref{formationchild}). A child is defined in relation to some arbitrary AST
+node, and can either be the first or the second child of that node. In this case, if we
+have the editor expression $\pi = \texttt{child } n$, then $n \in \ctyp$ is
+defined in relation to the cursor. AST children are also used again later for the type system.
+
+\begin{equation}\label{formationchild}
+    \Ctyp
+\end{equation}
+
+We have modeled it in Elm with the custom type
+
+\begin{lstlisting}[language=elm,%
+           label={child-formation-elm},%
+           gobble=0,%
+           caption={Formation rules (\ref{formationchild}) modeled in Elm},%
+           ]
+type Child
+    = One
+    | Two
+\end{lstlisting}
+
+In order to evaluate editor expressions, specifically the expression $\pi =
+    \texttt{eval}$, we have to introduce and model three more types (the evaluation
+itself is discussed in section \ref{evaluation}). The return value of evaluating
+this expression is of type \val. The value, $v \in \val$, may also contain
+$\hval$ or $\bval$. $\hval$ and $\bval$ represents evaluated ASTs that contains
+holes and evaluated ASTs that contains breakpoints, respectively, while only
+being found in \val~represents all other evaluated ASTs. The formation rules for
+the values, where $v \in \val$, $u \in \hval$ and $w \in \bval$, are
+
+\begin{align}
+    \Val \label{val-formation-rules}   \\
+    \HVal \label{hval-formation-rules} \\
+    \BVal \label{bval-formation-rules}
+\end{align}
+
+The formation rules are modeled in Elm using custom types --- as seen in
+figures \ref{Val-formation}, \ref{HVal-formation} and \ref{BVal-formation} ---
+in a similar style to how other formation rules have been modeled.
+
+\begin{lstlisting}[language=elm,%
+                     label={Val-formation},%
+                     gobble=6,%
+                     caption={Formation rules (\ref{val-formation-rules}) modeled in Elm},%
+                     ]
+      type Val
+        = VConst Const.Value
+        | VLambda Var.Id Ast
+        | W BVal
+        | U HVal
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                     label={HVal-formation},%
+                     gobble=6,%
+                     caption={Formation rules (\ref{hval-formation-rules}) modeled in Elm},%
+                     ]
+      type HVal
+        = HHole
+        | HApp1 HVal Val
+        | HApp2 Var.Id Ast HVal
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                     label={BVal-formation},%
+                     gobble=6,%
+                     caption={Formation rules (\ref{bval-formation-rules}) modeled in Elm},%
+                     ]
+      type BVal
+        = BBreak Ast
+        | BApp1 BVal Ast
+        | BApp2 Var.Id Ast BVal
+\end{lstlisting}
+
+\subsection{Types}
+
+We use the variable $\tau$ to denote the type of an AST, where $\tau \in \atyp$.
+The type can be that of a constant (called the base type), that of an
+abstraction, that of a breakpoint or some not yet determined type (called the
+indeterminate type). The formation rules are
+
+\begin{equation}\label{eq:atyp-formation}
+    \Atyp
+\end{equation}
+
+We have modeled the formation rules in Elm using a custom type, where
+the term constructors correspond to the formation clauses.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   caption={Formation rules (\ref{eq:atyp-formation}) modeled in Elm},%
+                   ]
+type ATyp
+    = TBase
+    | TLambda ATyp ATyp
+    | TBreak ATyp
+    | TIndeterminate
+\end{lstlisting}
+
+With regards to the type checker, Godiksen et al. make some alterations to the
+formation rules of AST node modifiers as well as AST nodes.\pepm~For node
+modifiers we include type annotations for applications, abstractions and holes,
+while for ASTs we include type annotations for abstraction parameters and
+holes. The alterations are defined in equation (\ref{eq:lan-mod-aam}) and
+(\ref{eq:lan-mod-ast}).
+\begin{equation}\label{eq:lan-mod-aam}
+  D ::= \var{x}
+  \mid \const{c}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2,\tau_1}~~~~~
+\end{equation}
+\begin{equation*}~~~~
+  \mid \bind{\aamLambda{x}}{\tau_1\to\tau_2}
+  \mid \aamBreak
+  \mid \bind{\aamHole}{\tau}
+\end{equation*}
+\begin{equation}\label{eq:lan-mod-ast}
+  a ::= x
+  \mid c
+  \mid \app{a_1}{a_2}
+  \mid \abs{\bind{x}{\tau}}{a}
+  \mid \cursor{a}
+  \mid \breakpoint{a}
+  \mid \bind{\hole}{\tau}
+\end{equation}
+
+For the implementation we extend the custom type with $\elm{ATyp}$ arguments to
+some term constructors to reflect the new formation rules. We also shorten the
+type annotation from $D = \bind{\aamApp}{\tau_1\to\tau_2,\tau_1}$ to
+$\bind{\aamApp}{\tau_1\to\tau_2}$. The reason for this being that we can extract
+$\tau_1$ using a pattern match in the implementation, hence it is redundant
+information.
+
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    caption={Formation rules (\ref{eq:lan-mod-aam}) modeled in Elm}%
+    ]
+type Aam
+    = Var Var.Id
+    | Const Const.Value
+    | App ATyp ATyp
+    | Lambda Var.Id ATyp ATyp
+    | Break
+    | Hole ATyp
+\end{lstlisting}
+\begin{lstlisting}[language=elm,%
+    gobble=0,%
+    caption={Formation rules (\ref{eq:lan-mod-ast}) modeled in Elm}%
+    ]
+type Ast
+    = Var Var.Id
+    | Const Const.Value
+    | App Ast Ast
+    | Lambda Var.Id ATyp Ast
+    | Break Ast
+    | Hole ATyp
+type C
+    = Cursor Ast
+    | CApp1 C Ast
+    | CApp2 Ast C
+    | CLambda Var.Id ATyp C
+    | CBreak C
+\end{lstlisting}
+
+We also introduce paths and two kinds of type contexts used for type checking.
+Paths, denoted as $p \in \pth$, use the already defined child types $T \in
+    \ctyp$ to specify a path from the root-node of some tree to some node in its
+subtree. Paths are formed by the two terms
+
+\begin{equation}\label{eq:path-formation}
+    \Pth
+\end{equation}
+
+We have modeled paths as a type constructor, such that a path does not depend on
+$\ctyp$, but instead is a generic path that takes a definition of children as an
+argument. This allows paths to be extended beyond only denoting AST paths, which
+may be useful in the future.
+
+\begin{lstlisting}[language=elm,%
+                   label={pth-type},%
+                   gobble=0,%
+                   caption={Formation rules (\ref{eq:path-formation}) modeled in Elm},%
+                   ]
+type Pth t
+    = Child (Pth t) t
+    | Epsilon
+\end{lstlisting}
+
+The two type contexts are AST type contexts, denoted $\ctx{a} \in \actx$, and
+editor expression type contexts, denoted $\ctx{e} \in \ectx$. An AST type
+context stores type bindings for variables in an AST.
+
+\begin{equation}\label{eq:actx}
+    \actx = \textbf{Var} \rightharpoonup \atyp
+\end{equation}
+
+An editor expression type context stores for all paths with a known subtree in
+an AST, a pair of an AST type context and an AST type.
+
+\begin{equation}\label{eq:ectx}
+    \ectx = \pth \rightharpoonup (\actx \times \atyp)
+\end{equation}
+
+We implemented the two contexts using type aliases to our \elm{Ctx a b} type. An
+AST type context has variables as keys and \elm{ATyp} as values.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   caption={Equation (\ref{eq:actx}) modeled in Elm},%
+                   ]
+type alias ACtx =
+    Ctx Var.Id ATyp
+\end{lstlisting}
+
+Editor expression type contexts have paths as keys and tuples of the form
+\elm{( ACtx, ATyp )} as values.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=0,%
+                   caption={Equation (\ref{eq:ectx}) modeled in Elm},%
+                   ]
+type alias ECtx =
+    Ctx Ast.Pth ( Ast.ACtx, Ast.ATyp )
+\end{lstlisting}
+
+\subsection{Editor expression builder}
+
+To build editor expressions, we need to introduce holes to the editor
+expressions. We define a hole term constructor for each type of editor
+expression, as seen in figure \ref{fig:editorexpressionswithholes}
+
+\begin{figure}[H]
+    \center
+    \begin{tabular}{llll}
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+             type Aep
+                = Eval
+                    $\vdots$
+                | AepHole
+        \end{lstlisting} &
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+            type Eed
+                = Neg Eed
+                     $\vdots$
+                | EedHole
+        \end{lstlisting} \\
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+            type Edt
+                = Pre Aep Edt
+                    $\vdots$
+                | EdtHole
+        \end{lstlisting} &
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+            type Aam
+                = Var Var.Id
+                    $\vdots$
+                | AamHole
+        \end{lstlisting}
+    \end{tabular}
+    \caption{Editor expression definitions with holes}
+    \label{fig:editorexpressionswithholes}
+\end{figure}
+
+We are now able to build editor expressions by initializing the editor
+expression builder with an \texttt{EdtHole}, and then allow the user to
+substitute holes with appropriate expressions. As with ASTs, we have the concept
+of atomic editor expressions, which are editor expressions with holes as
+children. The user can substitute holes until no holes are left. An editor
+expression without any holes is said to be \textit{completed}.
+
+We are only interested in evaluating completed editor expressions. Therefore, we
+need to know when an editor expression is completed, and only then allow the
+user to evaluate it.
+
+We considered two approaches. The first approach would be to introduce an
+opaque type with a single term constructor. For example
+
+\begin{lstlisting}[language=elm,%
+                   label="completed-edt-definition",%
+                   gobble=4,%
+                   ]
+    type CompletedEdt = Completed Edt
+\end{lstlisting}
+
+We would also need a function that takes an \texttt{Edt}, recursively
+checks whether it contains any holes, and returns a \texttt{Maybe CompletedEdt}.
+We will refer to this function as \texttt{toCompleted} in this subsection.
+
+With the \texttt{CompletedEdt} type and the \texttt{toCompleted} function we can
+create some guarantees. For example, if the editor expressions evaluation
+function takes a \texttt{CompletedEdt} instead of an \texttt{Edt}, we ensure ---
+given that \texttt{toCompleted} is properly implemented --- that uncompleted
+editor expressions cannot be evaluated.
+
+This approach would work, but has some drawbacks. Since we introduce the
+\texttt{CompletedEdt} type, we need to convert between \texttt{Edt} and
+\texttt{CompletedEdt} a lot, which can clutter the code. More critically, this
+approach depends on the constructor of \texttt{CompletedEdt} not being exposed
+and \texttt{toCompleted} to be correctly implemented. This is not a serious
+issue, but we can do better.
+
+We decided to move away from this first approach and rather introduce a type
+variable to each editor expression type. The type variable would be used
+for recursively defining the type in terms of the type variable, but also as an
+argument to each hole constructor, as seen in the following listings.
+
+\begin{lstlisting}[language=elm,%
+                   label="aep-definition",%
+                   gobble=4,%
+                   ]
+    type Aep a
+        = Eval
+        | Sub (Aam a)
+        | Child Ast.Child
+        | Parent
+        | AepHole a
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label="eed-definitions",%
+                   gobble=4,%
+                   ]
+    type Eed a
+        = Neg (Eed a)
+        | Conjunction (Eed a) (Eed a)
+        | Disjunction (Eed a) (Eed a)
+        | At (Aam a)
+        | Possibly (Aam a)
+        | Necessarily (Aam a)
+        | EedHole a
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label="generic-edt-definition",%
+                   gobble=4,%
+                   ]
+    type Edt a
+        = Pre (Aep a) (Edt a)
+        | Bicond (Eed a) (Edt a) (Edt a)
+        | SeqComp (Edt a) (Edt a)
+        | Rec Var.Id (Edt a)
+        | Call Var.Id
+        | Nil
+        | EdtHole a
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label="aam-definitions",%
+                   gobble=4,%
+                   ]
+    type Aam a
+        = Var Var.Id
+        | Con Const.Value
+        | App ATyp ATyp
+        | Lambda Var.Id ATyp ATyp
+        | Break
+        | Hole ATyp
+        | AamHole a
+\end{lstlisting}
+
+We can utilize the \texttt{()} and the \texttt{Never} types to represent
+completed and uncompleted editor expressions. If for example \texttt{a} in
+\texttt{Edt a} is replaced with \texttt{()}, the editor expression can contain
+holes. Conversely, if we replace \texttt{a} with \texttt{Never}, it cannot
+contain holes, since we need a \texttt{Never} value to construct a hole. We can
+therefore use \texttt{Edt ()} to represent uncompleted editor expressions, and
+\texttt{Edt Never} to represent completed editor expressions. We have created a
+type alias for completed and uncompleted editor expressions of every type. For
+example, the following are the type aliases for \texttt{Edt a}.
+
+\begin{lstlisting}[language=elm,%
+                   label="completed-and-uncompleted-edts",%
+                   gobble=4,%
+                   ]
+    type alias Uncompleted =
+        Edt ()
+
+    type alias Completed =
+        Edt Never
+\end{lstlisting}
+
+This approach creates stronger guarantees by making impossible states
+impossible. The \texttt{toCompleted} function cannot take an
+\texttt{uncompleted} editor expression, return a \texttt{completed} editor
+expression and still have bugs, since we have constrained the types to create
+type level guarantees.
+
+
+\subsection{Editor expression builder substitutions}
+
+We need a way for the user to build an expression from a hole to a completed
+editor expression. In order to do this, we want to show any holes that might be
+in the editor expression on the user interface, and allow the user to choose a
+substitution.
+
+We have some modeling design decisions to consider for this to work. As we are working
+with Elm, we need to implement a \texttt{view} function that returns the HTML
+for rendering the editor expression we are building. When we return the
+HTML for a hole, we want it to be a button element that, when pressed, sends a
+message to an \texttt{update} function. This message needs to somehow specify
+which hole is to be substituted. There are many approaches we could have taken
+and we will now discuss two approaches we have considered, and why we chose
+the approach we did.
+
+There are four types of holes that we can potentially substitute, i.e. one for
+an \texttt{Edt}, \texttt{Aep}, \texttt{Aam} and an \texttt{Eed}. As such, we
+need one message constructor for each type of hole, since they all require their
+own type of substitution expression. We have defined the following message type
+and constructors for our substitutions which we will extend later.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=4,%
+                   ]
+    type Msg
+        = SubstituteEdt
+        | SubstituteAep
+        | SubstituteAam
+        | SubstituteEed
+\end{lstlisting}
+
+One approach would be to build up a path as we recursively build the HTML for
+the editor expression, and then have the message contain that path. I.e. if we
+use the path type constructor from listing \ref{pth-type}, and give it a
+definition for an editor expression child type, we could extend our message type
+with this path giving us the following type.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=4,%
+                   ]
+    type Msg
+        = SubstituteEdt (Pth Child)
+        | SubstituteAep (Pth Child)
+        | SubstituteAam (Pth Child)
+        | SubstituteEed (Pth Child)
+\end{lstlisting}
+
+When the \texttt{update} function receives such a message, it knows which type
+of substitution is required, and it knows the path to where the substitution is
+to be made.
+
+It would then simply traverse the editor expression using the path, and
+substitute what the path points to with a valid substitution. However, from the
+perspective of the \texttt{update} function, it has no idea of whether the path
+is valid. What the \texttt{update} function should do if the path does not exist
+in the editor expression is unclear, and as such we would have to handle that
+error case. Furthermore, if the path points to an element that does not match
+the expected substitution type we would also have to handle that error. Since we
+control both the \texttt{view} and the \texttt{update} functions, we can be
+fairly certain that such errors would never happen, but it would be better if we
+could make that a guarantee through the types of Elm.
+
+This leads us to the second approach we have considered. It is a bit more
+involved, but does not contain the flaws of the previous approach. The idea is
+to build up a function as we build up the HTML for the editor expression. This
+function is a function that when given a substitution returns the original
+editor expression but with the current recursive term replaced by the
+substitution. The type of the formal parameter of the function would depend on
+where we are in the traversal, but the return type would always be an
+\texttt{Edt}. This function could then be contained in the message giving us the following
+message type.
+
+\begin{lstlisting}[language=elm,%
+                   gobble=4,%
+                   ]
+    type Msg a
+        = SubstituteEdt (Edt a -> Edt a)
+        | SubstituteAep (Aep a -> Edt a)
+        | SubstituteAam (Aam a -> Edt a)
+        | SubstituteEed (Eed a -> Edt a)
+\end{lstlisting}
+
+The \texttt{update} function can use the message variant to determine which type
+of substitution is needed, and then call the function supplied with the message
+to perform the substitution. This is the approach we went with since we do not
+have to handle any error conditions --- like with the path approach --- as the
+Elm type system helps us constrain the control flow to the valid code paths.
+

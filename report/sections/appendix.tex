@@ -1,0 +1,155 @@
+\section{Appendix}
+
+\begin{lstlisting}[language=elm,%
+                   label=substitutefunction,%
+                   caption="The Ast.substitute function.",%
+                   gobble=4,%
+                   ]
+    {-| Substitutes the AST under the cursor with an atomic AST.
+    -}
+    substitute : Ast -> WellFormedAst -> WellFormedAst
+    substitute sub c =
+        case c of
+            Cursor a1 ->
+                case ( a1, sub ) of
+                    -- Reduction rule: BREAK-2
+                    ( Break a1_, Break _ ) ->
+                        Cursor a1_
+
+                    -- Reduction rule: BREAK-1
+                    ( _, Break _ ) ->
+                        Cursor <| Break a1
+
+                    -- Reduction rules: VAR, CONST, APP, LAMBDA, HOLE
+                    _ ->
+                        Cursor sub
+
+            CApp1 c1 a2 ->
+                CApp1 (substitute sub c1) a2
+
+            CApp2 a1 c2 ->
+                CApp2 a1 (substitute sub c2)
+
+            CLambda x tau c1 ->
+                CLambda x tau <| substitute sub c1
+
+            CBreak c1 ->
+                CBreak <| substitute sub c1
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label=parent-function,%
+                   caption="The Ast.parent function.",%
+                   gobble=4,%
+                   ]
+    {-| Navigates the cursor to its parent.
+    Note, if the cursor is at the root, the AST is not modified.
+    -}
+    parent : WellFormedAst -> WellFormedAst
+    parent c =
+        case c of
+            Cursor _ ->
+                c
+
+            -- Reduction rule: APPP-1
+            CApp1 (Cursor a1) a2 ->
+                Cursor <| App a1 a2
+
+            -- Reduction rule: APPP-2
+            CApp2 a1 (Cursor a2) ->
+                Cursor <| App a1 a2
+
+            -- Reduction rule: ABSP
+            CLambda x tau (Cursor a1) ->
+                Cursor <| Lambda x tau a1
+
+            -- Reduction rule: BREAKP
+            CBreak (Cursor a1) ->
+                Cursor <| Break a1
+
+            CApp1 c1 a2 ->
+                CApp1 (parent c1) a2
+
+            CApp2 a1 c2 ->
+                CApp2 a1 <| parent c2
+
+            CLambda x tau c1 ->
+                CLambda x tau <| parent c1
+
+            CBreak c1 ->
+                CBreak <| parent c1
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label=childOne-function,%
+                   caption="The Ast.childOne function.",%
+                   gobble=4,%
+                   ]
+    {-| Navigates the cursor to its first child.
+    Note, if the child does not exits, the AST is not modified.
+    -}
+    childOne : WellFormedAst -> WellFormedAst
+    childOne c =
+        case c of
+            Cursor a ->
+                case a of
+                    -- Reduction rule: APPC-1
+                    App a1 a2 ->
+                        CApp1 (Cursor a1) a2
+
+                    -- Reduction rule: ABSC
+                    Lambda x tau a1 ->
+                        CLambda x tau <| Cursor a1
+
+                    -- Reduction rule: BREAKC
+                    Break a1 ->
+                        CBreak <| Cursor a1
+
+                    _ ->
+                        c
+
+            CApp1 c1 a2 ->
+                CApp1 (childOne c1) a2
+
+            CApp2 a1 c2 ->
+                CApp2 a1 <| childOne c2
+
+            CLambda x tau c1 ->
+                CLambda x tau <| childOne c1
+
+            CBreak c1 ->
+                CBreak <| childOne c1
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label=childTwo-function,%
+                   caption="The Ast.childTwo function.",%
+                   gobble=4,%
+                   ]
+    {-| Navigates the cursor to its second child.
+    Note, if the child does not exits, the AST is not modified.
+    -}
+    childTwo : WellFormedAst -> WellFormedAst
+    childTwo c =
+        case c of
+            Cursor a ->
+                case a of
+                    -- Reduction rule: APPC-2
+                    App a1 a2 ->
+                        CApp2 a1 (Cursor a2)
+
+                    _ ->
+                        c
+
+            CApp1 c1 a2 ->
+                CApp1 (childTwo c1) a2
+
+            CApp2 a1 c2 ->
+                CApp2 a1 <| childTwo c2
+
+            CLambda x tau c1 ->
+                CLambda x tau <| childTwo c1
+
+            CBreak c1 ->
+                CBreak <| childTwo c1
+\end{lstlisting}

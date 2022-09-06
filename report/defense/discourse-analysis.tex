@@ -1,0 +1,49 @@
+\section{Discourse analysis}
+
+\begin{frame}
+    \frametitle{Discourse analysis}
+    \framesubtitle{Choice of Programming Language}
+
+    \begin{itemize}
+        \item We considered Elm, Haskell, PureScript and could have considered
+            a non-functional programming language like Rust.
+            \pause
+        \item We chose to implement the editor in Elm.
+            \pause
+        \item Advantages
+            \begin{itemize}
+                \item Elm is a pure functional language.
+                    \pause
+                \item Elm has expressive types such as Algebraic Data Types.
+                    \pause
+                \item Elm is intended for front-end web development, and as such
+                    is good for making graphical user interfaces.
+                    \pause
+                \item Previous experience using Elm.
+            \end{itemize}
+        \item Disadvantages
+            \begin{itemize}
+                \item Elm is very limited with regards to type-classes. I.e. one
+                    cannot make types instances of type-classes, and one cannot
+                    define new type-classes.
+            \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Discourse analysis}
+    \framesubtitle{Testing}
+
+    \begin{itemize}
+        \item Making tests during the development of the editor would have been
+            helpful.
+            \pause
+        \item TDD would likely serve this project well.
+            \pause
+        \item At times we caught some errors that likely would have been caught
+            by tests much earlier.
+            \pause
+        \item Having tests would make us more confident about the correctness of
+            the program.
+    \end{itemize}
+\end{frame}

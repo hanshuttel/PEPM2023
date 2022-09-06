@@ -1,0 +1,7 @@
+Evaluering af AST  - uge 14
+Evaluering af EDT  - uge 15
+Expression builder - uge 16
+Visualisering      - uge 17-18
+Type system        - uge 19-20
+UI (nice at have)  - uge 21
+Buffer             - uge 22-23

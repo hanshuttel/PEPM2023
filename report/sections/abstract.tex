@@ -1,0 +1,23 @@
+\label{abstract}
+\begin{abstract}
+Structure editors can be useful for a multitude of reasons. Most notably is the
+elimination of syntax errors by editing abstract syntax trees directly. We have
+studied a type-safe structure editor calculus of simple lambda-expressions that
+allows partially evaluated programs and use holes to represent missing
+subtrees. Our project is to implement this editor calculus in Elm. This paper
+will be going through the implementation details using Elm, highlighting the
+advantages of the functional language. The implementation is intended as a
+proof of concept of the calculus and we strive to model the editor as closely
+as possible to the calculus, retaining the guarantees they put forth. The
+editor works with configurations of abstract syntax trees and editor
+expressions that communicate bidirectionally. We allow for different
+visualizations of ASTs and implement the possibility of creating editor
+expressions with our editor expression builder, making sure that built
+unfinished expression are not able to be evaluated. A partially implemented
+type system is discussed and we go through the finished and the problematic
+parts of it.
+\end{abstract}
+
+% General TODOs
+% TODO: Add captions to listings
+% TODO: Update listings to the latest version of the code

@@ -1,0 +1,31 @@
+\section{Preliminaries}
+\label{preliminaries}
+
+Throughout the paper, we will assume basic knowledge of the Elm architecture,
+specifically the significance of the \texttt{view} and \texttt{update}
+functions, as well as having a type that represents a model, and a type that
+represents a message to the \texttt{update}
+function \cite{Elm-lang-architecture}.
+
+In Elm, we can define algebraic data types. These are called custom types in
+Elm \cite{Elm-lang-custom-types}, and we will refer to them as such in this
+paper.
+
+We will be using two special types that are built into Elm in parts of the
+modeling of our editor. These types are \texttt{()} (pronounced ``unit'') and
+\texttt{Never} \elmcore. We know these types from category theory, where they
+correspond to the terminal and the initial objects respectively. What this means
+is that the \texttt{()} type has a single term constructor which does not take
+any arguments and is exposed. As such, we can construct such a type at any point
+from nothing. Conversely, the \texttt{Never} type is exposed, but does not have
+any term constructors at all. As such, we can say that a function or a custom
+type needs a \texttt{Never} type, but we can never construct such a value.
+
+With regards to the \elm{Never} type, Elm defines a function \elm{never : Never
+-> a} \elmcore. We sometimes use this function when pattern matching to indicate to the
+compiler that a case can never be reached.
+
+We make use of so called opaque types throughout the paper. An opaque type is a
+custom type defined in some module, where the type is exposed, but not its
+constructors. This guarantees that the values encapsulated in the custom type is
+hidden outside the module, but accessible within.
