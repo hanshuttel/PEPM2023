@@ -1,0 +1,88 @@
+\section{The editor calculus}
+
+\subsection{Syntax}
+
+Editor expressions are given by the following formation rules.
+%
+\begin{align}
+    \pi &::= \eval
+  \mid \sub{D}
+  \mid \child{n}
+  \mid \parent \label{aep-formation-rules} \\
+   \phi &::= \neg\phi
+  \mid \conjunction{\phi_1}{\phi_2}
+  \mid \disjunction{\phi_1}{\phi_2}
+  \mid \at{D}
+  \mid \possibly{D}
+  \mid \necessarily{D} \label{eed-formation-rules} \\
+    E &::= \pre{\pi}{E}
+  \mid \bicond{\phi}{E_1}{E_2}
+  \mid \seqcomp{E_1}{E_2}
+  \mid \rec{x}{E}
+  \mid \call{x}
+  \mid \nil \label{edt-formation-rules} \\
+    D &::= \var{x}
+  \mid \const{c}
+  \mid \aamApp
+  \mid \aamLambda{x}
+  \mid \aamBreak
+  \mid \aamHole \label{aam-formation-rules}
+\end{align}
+
+Expressions $E$ involve 
+
+\subsection{Semantics}
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llll}
+    \scriptsize(COND-1)  & $ \CondOne $           & \scriptsize(COND-2) & $ \CondTwo$ \\
+    \scriptsize(EVAL)    & $ \Eval $              & \scriptsize(SEQ)    & $ \Seq$     \\
+    \scriptsize(STRUCT)  & $\Struct$              & \scriptsize(CONTEXT)& \scriptsize$\Context$
+  \end{tabular}
+  \caption{Editor Expression reduction rules}
+  \label{fig:edtreductionrules}
+\end{figure*}
+
+The semantics of the editor calculus is given by a labelled transition system
+$(S_E, \mathcal{L}_E, \to)$, where $S_E = \edt \times \AST$ and $\mathcal{L}_E
+= \val \cup \aep \cup \{\epsilon\}$ and where transitions take the form
+$\breakpoint{E, a} \transition{$\alpha$} \breakpoint{E', a'}$ with $a$ being
+well-formed, $E$ being completed and $\alpha \in \mathcal{L}_E$. 
+
+Editor expressions are always reduced in configurations of the form
+$\breakpoint{E,a}$, where $E$ is the given editor expression and $a$ is the
+currently build AST to which $E$ is applied. In terms of the labeled
+transition system, we incrementally reduce the configuration until $E'$ becomes
+$\nil$, and returns $\alpha$ for each increment. Figure
+\ref{fig:edtreductionrules} show the different reduction rules for editor
+expressions.
+
+The rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
+for a biconditional editor expression, $\bicond{\phi}{E_1}{E_2}$, we either use
+$E_1$ or $E_2$ as editor expression for the next reduction increment, based on
+whether or not $\phi$ holds for the AST in the configuration. Hence it just
+returns $\epsilon$. The rule \hyperref[fig:edtreductionrules]{(EVAL)} describes
+that if we have the expression $\texttt{eval}.E$, we evaluate the AST to some
+value in \val~which we return, and the expression of the new configuration is
+$E$. The rule \hyperref[fig:edtreductionrules]{(SEQ)} describes that for a
+composition $\seqcomp{E_1}{E_2}$ we reduce $E_1$ until it becomes $\nil$, while
+updating the configuration and returning accordingly. The trivial case $E_1 =
+\nil$ in sequential composition is caught by the rule
+\hyperref[fig:edtreductionrules]{(STRUCT)}, as it describes that if two editor
+expressions are equivalent, then two configurations using the editor expressions
+respectively will also be reduced equivalently, e.g. we have that the sequential
+composition $\seqcomp{\nil}{E_2}$ is equivalent to $E_2$ and thus reducing the
+two expressing on an AST is also equivalent. This rule also takes care of
+recursive editor expressions. The last rule
+\hyperref[fig:edtreductionrules]{(CONTEXT)} describes that if we have a
+substitution or cursor movement expression of the form $\pi.E$, then we reduce
+the AST according to the labeled transition system for substitution and cursor
+movement expressions, and update the configuration to contain the editor
+expression $E$ and the new AST. 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../pepm2023"
+%%% End:

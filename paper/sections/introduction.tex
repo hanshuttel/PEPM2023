@@ -1,23 +1,12 @@
 \section{Introduction}
 \label{introduction}
 
-In their 2020 paper Godiksen et al. \pepm~described an editor calculus for a
-typed structure editor that works directly with abstract syntax trees (ASTs)
-making syntax errors impossible. Their editor calculus has structural
-operational semantics and works for a simple lambda calculus that allows
-evaluation of unfinished programs through the notion of holes and breakpoints.
-The calculus uses editor expressions to modify ASTs and has bidirectional
-communication between editor expressions and ASTs such that an editor
-expression modifies an AST and an AST provides information that the editor
-expression needs in order to reduce. Our project aims to work as a proof of
-concept for the calculus.\\
+Structure editors are an alternative to the standard text editors that
+eliminate the occurrence of syntax errors by working directly with an
+abstract syntax tree (AST) and can also be used to give a more intuitive
+visualization of the program code.
 
-There are a multitude of reasons as to why structure editors can work as an
-alternative to the standard text editors. This includes the elimination of
-syntax errors by working directly with ASTs and in other instances giving a
-more intuitive visualization of the program.
-
-An early example of such a structure editor is the Cornell Program Synthesizer
+An early example of a structure editor is the Cornell Program Synthesizer
 from 1981 \cornell. It directly edits the ASTs in programs by using a cursor to
 select nodes and allows for insertions and modifications at the cursor. This
 editor was not typed meaning that it allowed ill-typed ASTs to be built.
@@ -27,54 +16,29 @@ structure editor on ASTs, where it introduces holes that represent uncompleted
 subtrees. It has dynamic semantics and type consistency of holes are not
 checked until the hole is built to completeness. The result is that for
 uncompleted programs the completed parts can still be evaluated and the holes
-can still be meaningful, even when they are not well-typed. In comparison, the
-type-safe editor calculus described by Godiksen et al. has static semantics and
-does assign meaning to ill-typed holes, but still allows partial evaluation of
-programs through the insertion of breakpoints.
+can still be meaningful, even when they are not well-typed.
 
-The visualization of the Cornell Program Synthesizer and Hazelnut
-implementations are both textual and close to that of a text editor. Some
-structure editors that are motivated by unconventional (non text-based)
-visualization include Scratch \scratch, where programming is done by moving
-blocks of different color and combining blocks like a puzzle. Another inclusion
-is Alice \alice, which is a programming language for writing 3D graphics where
-the structure editor is visualized as 3D renderings. \\
+In their 2020 paper Godiksen et al. \pepm~described an editor calculus
+inspired by Hazelnut. The calculus describes the edit actions of a 
+typed structure editor on terms of a simply-typed lambda
+calculus. The calculus allows for partial evaluation of terms by means
+of breakpoints and like Hazelnut, terms can be incomplete in the form
+of holes. However, unlike Hazelnut, the calculus incorporates recursive
+behaviours and a very expressive spatial logic on ASTs. The type
+system of the calculus guarantees that well-typed editor expressions
+will always construct well-typed programs.
 
-In this paper we will introduce the implementation details of our structure
-editor derived from the editor calculus described in the paper by Godiksen et
-al. and argue for why our implementation retains all guarantees from the
-calculus, even where the calculus may not be directly modeled.
-
-We want to implement the editor in a functional programming language, as they
-provide expressive types that lend themselves well to modeling the formal
-descriptions of the editor. In particular, we want a typed language that has
-algebraic data types. We considered using either Haskell or Elm, since both are
-fairly popular functional programming languages. Haskell would be a good
-choice, but we ended up choosing Elm, primarily because it would be easier to
-create a user interface in Elm.\\
+In this paper we demonstrate that the editor calculus can serve as the
+basis of a structure editor by means of an implementation in
+Elm. This implementation effort involves an implementation of the
+spatial logic as well as the underlying type system.
 
 In order to create editor expressions that are used to traverse and modify the
-ASTs, we introduce an editor expression builder that should allow us to
+ASTs, we introduce an editor expression builder that allows us to
 iteratively build editor expressions.
 
-We want to visualize ASTs and editor expressions as well as interact with them.
-By interacting we mean to be able to modify an AST by evaluating configurations
-consisting of an AST and an editor expression, where the editor expression can
-be any desired expression. Furthermore we want choices available in our visual
-representation of ASTs, making it possible to change between different
-visualizations.
-
-Godiksen et al. also describe a way to acquire type-safety in their calculus,
-by way of their type system. The implementation of their type system should
-make it impossible to get runtime errors from problems such as invalid ASTs as
-well as expressions acting upon non-existing subtrees et cetera.
-
-Going from a completely theoretical calculus to a practical implementation, we
-also have to consider the usability of the editor. While not the main focus we
-will go through approaches where we make it easier to use certain aspects of
-the editor, such as using editor expressions and navigating the ASTs. \\
-
-This paper is structured the following way. Preliminaries are listed in section
+This paper is structured as follows
+. Preliminaries are listed in section
 \ref{preliminaries}. The overall principles of Godiksen et al.s editor calculus
 are described in section \ref{principles}. In section \ref{design} we introduce
 the design of the implementation. Section \ref{modeling} is about how we model
@@ -86,3 +50,8 @@ interface and how it combines the calculus in section \ref{user-interface}. In
 the last section - section \ref{conclusion} - we conclude our project and
 discuss future work.
 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../pepm2023"
+%%% End:

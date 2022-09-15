@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.5.29)  6 SEP 2022 21:02
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.5.29)  15 SEP 2022 15:38
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1432,32 +1432,32 @@ Package caption Info: End \AtBeginDocument code.
 
 Excluding 'CCSXML' comment.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 20.74pt on input line 119.
+(Font)              scaled to size 20.74pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 20.74pt on input line 119.
+(Font)              scaled to size 20.74pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 12.0pt on input line 119.
+(Font)              scaled to size 12.0pt on input line 120.
 LaTeX Font Info:    Try loading font information for T1+LinuxBiolinumT-TLF on i
-nput line 119.
+nput line 120.
 
 (/usr/local/texlive/2018/texmf-dist/tex/latex/libertine/T1LinuxBiolinumT-TLF.fd
 File: T1LinuxBiolinumT-TLF.fd 2017/03/20 (autoinst) Font definitions for T1/Lin
 uxBiolinumT-TLF.
 )
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 10.0pt on input line 119.
+(Font)              scaled to size 10.0pt on input line 120.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `LinuxBiolinumT-TLF' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 10.0pt on input line 119.
+(Font)              scaled to size 10.0pt on input line 120.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `LinuxLibertineT-TLF' (encoding: OT1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 7.3pt on input line 119.
+(Font)              scaled to size 7.3pt on input line 120.
  (/usr/local/texlive/2018/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
@@ -1465,9 +1465,9 @@ File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
-(Font)              scaled to size 8.0pt on input line 119.
+(Font)              scaled to size 8.0pt on input line 120.
 LaTeX Font Info:    Try loading font information for TS1+LinuxLibertineT-TLF on
- input line 119.
+ input line 120.
 
 (/usr/local/texlive/2018/texmf-dist/tex/latex/libertine/TS1LinuxLibertineT-TLF.
 fd
@@ -1475,124 +1475,77 @@ File: TS1LinuxLibertineT-TLF.fd 2017/03/20 (autoinst) Font definitions for TS1/
 LinuxLibertineT-TLF.
 )
 LaTeX Font Info:    Font shape `TS1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 119.
+(Font)              scaled to size 8.0pt on input line 120.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `LinuxLibertineT-TLF' (encoding: TS1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 119.
+(Font)              scaled to size 8.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 10.0pt on input line 119.
+(Font)              scaled to size 10.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 12.0pt on input line 119.
+(Font)              scaled to size 12.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/it' will be
-(Font)              scaled to size 10.0pt on input line 119.
+(Font)              scaled to size 10.0pt on input line 120.
 LaTeX Font Info:    Font shape `TS1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 10.0pt on input line 119.
+(Font)              scaled to size 10.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
-(Font)              scaled to size 10.0pt on input line 119.
+(Font)              scaled to size 10.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 9.0pt on input line 119.
+(Font)              scaled to size 9.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 9.0pt on input line 119.
+(Font)              scaled to size 9.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
-(Font)              scaled to size 9.0pt on input line 119.
+(Font)              scaled to size 9.0pt on input line 120.
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 9.0pt on input line 119.
+(Font)              scaled to size 9.0pt on input line 120.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 9.0pt on input line 119.
+(Font)              scaled to size 9.0pt on input line 120.
 
 
 Package hyperref Warning: Option `pdflang' has already been used,
-(hyperref)                setting the option has no effect on input line 119.
+(hyperref)                setting the option has no effect on input line 120.
 
 
 Package hyperref Warning: Option `pdfdisplaydoctitle' has already been used,
-(hyperref)                setting the option has no effect on input line 119.
+(hyperref)                setting the option has no effect on input line 120.
 
 (./sections/introduction.tex
 
-Package natbib Warning: Citation `10.1145/3441296.3441393' on page  undefined o
-n input line 4.
+LaTeX Warning: Reference `preliminaries' on page  undefined on input line 42.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 4--14
-
- []
+LaTeX Warning: Reference `principles' on page  undefined on input line 43.
 
 
-Package natbib Warning: Citation `10.1145/358746.358755' on page  undefined on 
-input line 21.
+LaTeX Warning: Reference `design' on page  undefined on input line 43.
 
 
-Package natbib Warning: Citation `conf/popl/Hazelnut17' on page  undefined on i
-nput line 25.
+LaTeX Warning: Reference `modeling' on page  undefined on input line 44.
 
 
-Package natbib Warning: Citation `10.1145/1592761.1592779' on page  undefined o
-n input line 38.
+LaTeX Warning: Reference `evaluation' on page  undefined on input line 46.
 
 
-Package natbib Warning: Citation `10.1145/332040.332481' on page  undefined on 
-input line 40.
+LaTeX Warning: Reference `type-checking' on page  undefined on input line 47.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 35--42
+LaTeX Warning: Reference `user-interface' on page  undefined on input line 49.
 
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 48--55
-
- []
-
-
+) (./sections/programs.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [1.1{/usr/local/texlive/2018/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 72--76
-
- []
-
-
-LaTeX Warning: Reference `preliminaries' on page  undefined on input line 78.
-
-
-LaTeX Warning: Reference `principles' on page  undefined on input line 79.
-
-
-LaTeX Warning: Reference `design' on page  undefined on input line 79.
-
-
-LaTeX Warning: Reference `modeling' on page  undefined on input line 80.
-
-
-LaTeX Warning: Reference `evaluation' on page  undefined on input line 82.
-
-
-LaTeX Warning: Reference `type-checking' on page  undefined on input line 83.
-
-
-LaTeX Warning: Reference `user-interface' on page  undefined on input line 85.
-
-) (./sections/conclusion.tex
-
-Package natbib Warning: Citation `10.1145/3441296.3441393' on page  undefined o
-n input line 5.
-
-
-Underfull \vbox (badness 3701) has occurred while \output is active []
-
-LaTeX Font Info:    Try loading font information for T1+zi4 on input line 33.
+LaTeX Font Info:    Try loading font information for T1+zi4 on input line 19.
 
 (/usr/local/texlive/2018/texmf-dist/tex/latex/inconsolata/t1zi4.fd
 File: t1zi4.fd 2018/01/14 T1/zi4 (Inconsolata)
 )
 LaTeX Font Info:    Font shape `T1/zi4/m/n' will be
-(Font)              scaled to size 10.0pt on input line 33.
+(Font)              scaled to size 10.0pt on input line 19.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `zi4' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
@@ -1603,83 +1556,123 @@ Package microtype Info: Character `textendash ' is missing
 Package microtype Info: Character `textemdash ' is missing
 (microtype)             in font `T1/zi4/m/n/10'.
 (microtype)             Ignoring protrusion settings for this character.
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
+(Font)              scaled to size 7.3pt on input line 19.
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
+(Font)              scaled to size 5.5pt on input line 19.
+)
+(./sections/editorcalculus.tex
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 10.0pt on input line 30.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 7.3pt on input line 30.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 5.5pt on input line 30.
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
+(Font)              scaled to size 7.0pt on input line 40.
+LaTeX Font Info:    Font shape `T1/zi4/m/n' will be
+(Font)              scaled to size 7.0pt on input line 42.
+Package microtype Info: Character `textendash ' is missing
+(microtype)             in font `T1/zi4/m/n/7'.
+(microtype)             Ignoring protrusion settings for this character.
+Package microtype Info: Character `textemdash ' is missing
+(microtype)             in font `T1/zi4/m/n/7'.
+(microtype)             Ignoring protrusion settings for this character.
+) (./sections/conclusion.tex
+Underfull \vbox (badness 3098) has occurred while \output is active []
+
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.62 
-      [2.2]
+l.44 T
+      o address the latter problem, we can add additional data to every AST
+[2.2]
 Underfull \hbox (badness 10000) in paragraph at lines 63--67
 
  []
 
 ) (./pepm2023.bbl
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
-Package natbib Warning: Empty `thebibliography' environment on input line 40.
-
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 8.0pt on input line 56.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 6.2pt on input line 56.
+LaTeX Info: Redefining \tempurl on input line 75.
+LaTeX Info: Redefining \tempurl on input line 109.
+LaTeX Info: Redefining \tempurl on input line 126.
 )
-
-Package natbib Warning: There were undefined citations.
-
 - LAST -
-Extra skip:0.192pt
-Left:166.0pt/2.36pt
-Right:168.168pt/0.0pt
-Output:168.084pt
+Extra skip:1.4265pt
+Left:406.0pt/2.36pt
+Right:405.0375pt/1.896pt
+Output:406.51875pt
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.137 \end{document}
+l.140 \end{document}
                      [3.3]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 137.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 137.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 140.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 140.
  (./pepm2023.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 137.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 137.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 140.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 140.
+Package rerunfilecheck Info: File `pepm2023.out' has not changed.
+(rerunfilecheck)             Checksum: 1EF110E0ECBD103B2294D70A7B4E9452;1026.
 
-
-Package rerunfilecheck Warning: File `pepm2023.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `pepm2023.out':
-(rerunfilecheck)             Before: 86EC3AAD05BAF52024770ED4E8C523A2;444
-(rerunfilecheck)             After:  CB668B9E91A1B35FFDCFD91C91A8E2FF;538.
 
 LaTeX Font Warning: Size substitutions with differences
-(Font)              up to 0.5pt have occurred.
+(Font)              up to 1.97499pt have occurred.
 
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 20845 strings out of 492649
- 313709 string characters out of 6129622
- 448039 words of memory out of 5000000
- 23929 multiletter control sequences out of 15000+600000
- 135829 words of font info for 235 fonts, out of 8000000 for 9000
+ 21164 strings out of 492649
+ 320498 string characters out of 6129622
+ 460108 words of memory out of 5000000
+ 24098 multiletter control sequences out of 15000+600000
+ 218620 words of font info for 379 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
- 60i,11n,94p,815b,449s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}{
-/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_7grukw.enc}{/
-usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_naooyc.enc}{/u
-sr/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_ki75ao.enc}{/us
-r/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_25tcsq.enc}{/usr
-/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_76gpa5.enc}{/usr/
-local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_nh77jq.enc}</usr/l
-ocal/texlive/2018/texmf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4r.pf
-b></usr/local/texlive/2018/texmf-dist/fonts/type1/public/libertine/LinBiolinumT
-.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/libertine/LinLibert
-ineT.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/libertine/LinLi
-bertineTB.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/libertine/
-LinLibertineTBI.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/libe
-rtine/LinLibertineTI.pfb>
-Output written on pepm2023.pdf (3 pages, 361860 bytes).
+ 60i,28n,94p,815b,449s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/newtx/libertinealt.enc}{/
+usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_fygcup.enc}{/u
+sr/local/texlive/2018/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}{/usr/
+local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_oexx6f.enc}{/usr/l
+ocal/texlive/2018/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr/local/texlive/20
+18/texmf-dist/fonts/enc/dvips/libertine/lbtn_7grukw.enc}{/usr/local/texlive/201
+8/texmf-dist/fonts/enc/dvips/libertine/lbtn_naooyc.enc}{/usr/local/texlive/2018
+/texmf-dist/fonts/enc/dvips/libertine/lbtn_ki75ao.enc}{/usr/local/texlive/2018/
+texmf-dist/fonts/enc/dvips/libertine/lbtn_25tcsq.enc}{/usr/local/texlive/2018/t
+exmf-dist/fonts/enc/dvips/libertine/lbtn_76gpa5.enc}{/usr/local/texlive/2018/te
+xmf-dist/fonts/enc/dvips/libertine/lbtn_nh77jq.enc}</usr/local/texlive/2018/tex
+mf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4r.pfb></usr/local/texlive
+/2018/texmf-dist/fonts/type1/public/libertine/LinBiolinumT.pfb></usr/local/texl
+ive/2018/texmf-dist/fonts/type1/public/libertine/LinLibertineT.pfb></usr/local/
+texlive/2018/texmf-dist/fonts/type1/public/libertine/LinLibertineTB.pfb></usr/l
+ocal/texlive/2018/texmf-dist/fonts/type1/public/libertine/LinLibertineTBI.pfb><
+/usr/local/texlive/2018/texmf-dist/fonts/type1/public/libertine/LinLibertineTI.
+pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/libertine/LinLiberti
+neTZ.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/newtx/fxlri-5le
+tters.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/newtx/fxlri-7l
+etters.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/amsfonts/symb
+ols/msam10.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/amsfonts/
+symbols/msam7.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/amsfon
+ts/symbols/msbm7.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/txf
+onts/rtxmi.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/newtx/rtx
+mi7.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/txfonts/rtxr.pfb
+></usr/local/texlive/2018/texmf-dist/fonts/type1/public/stmaryrd/stmary10.pfb><
+/usr/local/texlive/2018/texmf-dist/fonts/type1/public/txfonts/txsya.pfb></usr/l
+ocal/texlive/2018/texmf-dist/fonts/type1/public/txfonts/txsyc.pfb></usr/local/t
+exlive/2018/texmf-dist/fonts/type1/public/newtx/txsys.pfb></usr/local/texlive/2
+018/texmf-dist/fonts/type1/public/newtx/zxlri.pfb>
+Output written on pepm2023.pdf (3 pages, 680578 bytes).
 PDF statistics:
- 94 PDF objects out of 1000 (max. 8388607)
- 72 compressed objects within 1 object stream
- 14 named destinations out of 1000 (max. 500000)
- 49709 words of extra memory for PDF output out of 51595 (max. 10000000)
+ 230 PDF objects out of 1000 (max. 8388607)
+ 176 compressed objects within 2 object streams
+ 31 named destinations out of 1000 (max. 500000)
+ 62549 words of extra memory for PDF output out of 74296 (max. 10000000)
 
