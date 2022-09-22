@@ -48,6 +48,9 @@ $\possibly{\phi}$ expresses that $\phi$ in some subtree of the current
 subtree and $\necessarily{\phi}$ expresses that $\phi$ holds
 everywhere in the current subtree.
 
+Finally, the $\eval$ primitive allows us to evaluate the entire AST
+(up to possible breakpoints).
+
 \subsection{Semantics}
 
 \begin{figure*}
@@ -76,31 +79,11 @@ $\nil$, and returns $\alpha$ for each increment. Figure
 \ref{fig:edtreductionrules} show the different reduction rules for editor
 expressions.
 
-The rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
+As an example, the rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
 for a biconditional editor expression, $\bicond{\phi}{E_1}{E_2}$, we either use
 $E_1$ or $E_2$ as editor expression for the next reduction increment, based on
 whether or not $\phi$ holds for the AST in the configuration. Hence it just
-returns $\epsilon$. The rule \hyperref[fig:edtreductionrules]{(EVAL)} describes
-that if we have the expression $\texttt{eval}.E$, we evaluate the AST to some
-value in \val~which we return, and the expression of the new configuration is
-$E$. The rule \hyperref[fig:edtreductionrules]{(SEQ)} describes that for a
-composition $\seqcomp{E_1}{E_2}$ we reduce $E_1$ until it becomes $\nil$, while
-updating the configuration and returning accordingly. The trivial case $E_1 =
-\nil$ in sequential composition is caught by the rule
-\hyperref[fig:edtreductionrules]{(STRUCT)}, as it describes that if two editor
-expressions are equivalent, then two configurations using the editor expressions
-respectively will also be reduced equivalently, e.g. we have that the sequential
-composition $\seqcomp{\nil}{E_2}$ is equivalent to $E_2$ and thus reducing the
-two expressing on an AST is also equivalent. This rule also takes care of
-recursive editor expressions. The last rule
-\hyperref[fig:edtreductionrules]{(CONTEXT)} describes that if we have a
-substitution or cursor movement expression of the form $\pi.E$, then we reduce
-the AST according to the labeled transition system for substitution and cursor
-movement expressions, and update the configuration to contain the editor
-expression $E$ and the new AST.
-
-Finally, the $\eval$ primitive allows us to evaluate the entire AST
-(up to possible breakpoints).
+returns $\epsilon$. 
 
 %%% Local Variables:
 %%% mode: latex

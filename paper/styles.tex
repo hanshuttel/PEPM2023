@@ -1,0 +1,40 @@
+\lstdefinelanguage{elm}
+{
+  % List of keywords
+  morekeywords={
+    alias,
+    as,
+    case,
+    else,
+    exposing,
+    if,
+    import,
+    in,
+    let,
+    module,
+    of,
+    port,
+    then,
+    type,
+    where
+  },
+  sensitive=true, % Keywords are case-sensitive
+  morecomment=[s]{\{-}{-\}}, % s is for start and end delimiter
+  morecomment=[l]{--},
+  morestring=[b]" % Defines that strings are enclosed in double quotes
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Define Colors             %%
+%% Colors from: elm.lang.org %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{color}
+\definecolor{elm-orange}{RGB}{240,20,20}
+\definecolor{elm-gray}{RGB}{149,149,138}
+\definecolor{elm-blue}{RGB}{0,133,255}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "pepm2023"
+%%% End:
