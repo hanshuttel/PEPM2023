@@ -33,13 +33,12 @@ The rest of the formation rules are defined similarly.
 
 \subsection{Abstract syntax trees}
 
-Since an AST is a tree data structure, there are a multitude of ways we could
-visualize them, and we had to pick a number of representations among many. We
-are interested in visualizing the AST to make the editor intuitive for a user.
-We are not necessarily interested in finding the ``best'' visualization, nor in
-implementing a vast number of different representations.
+We are interested in visualizing the AST to make the editor intuitive
+for a user.  We are not necessarily interested in finding the ``best''
+visualization, nor in implementing a vast number of different
+representations.
 
-A very simple representation would be to represent the AST in a textual form,
+A simple representation would be to represent the AST in a textual form,
 as seen in figure \ref{fig:ast-in-text-form}.
 
 \begin{figure}[H]
@@ -52,22 +51,14 @@ as seen in figure \ref{fig:ast-in-text-form}.
     \label{fig:ast-in-text-form}
 \end{figure}
 
-The notation used for this representation follows the notation used by Godiksen
-et al.~\pepm. We implemented this representation, as it was straightforward to
-implement, and it can provide the user with a compact and formal visualization
-of the AST. However, this approach comes with some drawbacks. It can be
-difficult to reason about, especially as an AST grows large.
+The notation used for this representation follows that of Godiksen
+et al.~\pepm. It is straightforward but can also be
+difficult to reason about, especially as the AST grows large.
 
-Because of this, we decided to implement another representation in addition to
-the textual form. The second approach is by representing it as tree structures
-often are, i.e. where nodes are rectangles and branches are lines that grow
-downwards, as seen in figure \ref{fig:ast_visual_tree}. A potential variation
-of this structure, could be in the form of a horizontal tree spanning from left
-to right
+We also implement another representatio, namely as a tree as seen in
+figure \ref{fig:ast_visual_tree}.
 
-Switching between the two visualizations is meant to be as easy as a click of a
-button, which allows the user to choose their preferred representation at any
-time.
+Switching between the two visualizations is immediate in the user interface.
 
 \begin{figure*}
   \center
@@ -85,7 +76,156 @@ time.
 
 \subsection{Implementing a type checker}
 
+
 \subsection{Building editor expressions}
+
+To build editor expressions, we need to introduce holes to the editor
+expressions. We define a hole term constructor for each type of editor
+expression, as seen in figure \ref{fig:editorexpressionswithholes}
+
+\begin{figure}[H]
+    \center
+    \begin{tabular}{llll}
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+             type Aep
+                = Eval
+                    $\vdots$
+                | AepHole
+        \end{lstlisting} &
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+            type Eed
+                = Neg Eed
+                     $\vdots$
+                | EedHole
+        \end{lstlisting} \\
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+            type Edt
+                = Pre Aep Edt
+                    $\vdots$
+                | EdtHole
+        \end{lstlisting} &
+
+        \begin{lstlisting}[language=elm,%
+                            gobble=8,%
+                            mathescape,%
+                            ]
+            type Aam
+                = Var Var.Id
+                    $\vdots$
+                | AamHole
+        \end{lstlisting}
+    \end{tabular}
+    \caption{Editor expression definitions with holes}
+    \label{fig:editorexpressionswithholes}
+\end{figure}
+
+We are now able to build editor expressions by initializing the editor
+expression builder with an \texttt{EdtHole}, and then allow the user to
+substitute holes with appropriate expressions. As with ASTs, we have the concept
+of atomic editor expressions, which are editor expressions with holes as
+children. The user can substitute holes until no holes are left. An editor
+expression without any holes is said to be \textit{completed}.
+
+We are only interested in evaluating completed editor expressions. Therefore, we
+need to know when an editor expression is completed, and only then allow the
+user to evaluate it. To do this, we introduce a type
+variable to each editor expression type. The type variable is used
+for recursively defining the type in terms of the type variable, but also as an
+argument to each hole constructor, as seen in the following listings.
+
+\begin{lstlisting}[language=elm,%
+                   label="aep-definition",%
+                   gobble=4,%
+                   ]
+    type Aep a
+        = Eval
+        | Sub (Aam a)
+        | Child Ast.Child
+        | Parent
+        | AepHole a
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label="eed-definitions",%
+                   gobble=4,%
+                   ]
+    type Eed a
+        = Neg (Eed a)
+        | Conjunction (Eed a) (Eed a)
+        | Disjunction (Eed a) (Eed a)
+        | At (Aam a)
+        | Possibly (Aam a)
+        | Necessarily (Aam a)
+        | EedHole a
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label="generic-edt-definition",%
+                   gobble=4,%
+                   ]
+    type Edt a
+        = Pre (Aep a) (Edt a)
+        | Bicond (Eed a) (Edt a) (Edt a)
+        | SeqComp (Edt a) (Edt a)
+        | Rec Var.Id (Edt a)
+        | Call Var.Id
+        | Nil
+        | EdtHole a
+\end{lstlisting}
+
+\begin{lstlisting}[language=elm,%
+                   label="aam-definitions",%
+                   gobble=4,%
+                   ]
+    type Aam a
+        = Var Var.Id
+        | Con Const.Value
+        | App ATyp ATyp
+        | Lambda Var.Id ATyp ATyp
+        | Break
+        | Hole ATyp
+        | AamHole a
+\end{lstlisting}
+
+We utilize the \texttt{()} and the \texttt{Never} types to represent
+completed and uncompleted editor expressions. If for example \texttt{a} in
+\texttt{Edt a} is replaced with \texttt{()}, the editor expression can contain
+holes. Conversely, if we replace \texttt{a} with \texttt{Never}, it cannot
+contain holes, since we need a \texttt{Never} value to construct a hole. We can
+therefore use \texttt{Edt ()} to represent uncompleted editor expressions, and
+\texttt{Edt Never} to represent completed editor expressions. We have created a
+type alias for completed and uncompleted editor expressions of every type. For
+example, the following are the type aliases for \texttt{Edt a}.
+
+\begin{lstlisting}[language=elm,%
+                   label="completed-and-uncompleted-edts",%
+                   gobble=4,%
+                   ]
+    type alias Uncompleted =
+        Edt ()
+
+    type alias Completed =
+        Edt Never
+\end{lstlisting}
+
+This approach creates stronger guarantees by making impossible states
+impossible. The \texttt{toCompleted} function cannot take an
+\texttt{uncompleted} editor expression, return a \texttt{completed} editor
+expression and still have bugs, since we have constrained the types to create
+type level guarantees.
+
 
 
 %%% Local Variables:

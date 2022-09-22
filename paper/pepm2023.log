@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.5.29)  22 SEP 2022 16:05
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.5.29)  22 SEP 2022 17:40
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1582,37 +1582,44 @@ Package microtype Info: Character `textemdash ' is missing
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 24.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 12.0pt on input line 47.
+(Font)              scaled to size 12.0pt on input line 46.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 8.8pt on input line 47.
+(Font)              scaled to size 8.8pt on input line 46.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 6.6pt on input line 47.
+(Font)              scaled to size 6.6pt on input line 46.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 12.0pt on input line 47.
+(Font)              scaled to size 12.0pt on input line 46.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 8.8pt on input line 47.
+(Font)              scaled to size 8.8pt on input line 46.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 6.6pt on input line 47.
+(Font)              scaled to size 6.6pt on input line 46.
+<assets/ast_root_cursor.png, id=94, 968.61874pt x 594.22pt>
+File: assets/ast_root_cursor.png Graphic file (type png)
+<use assets/ast_root_cursor.png>
+Package pdftex.def Info: assets/ast_root_cursor.png  used on input line 67.
+(pdftex.def)             Requested size: 227.64894pt x 139.65079pt.
+<assets/ast_subtree_cursor.png, id=96, 937.5025pt x 618.31pt>
+File: assets/ast_subtree_cursor.png Graphic file (type png)
+<use assets/ast_subtree_cursor.png>
+Package pdftex.def Info: assets/ast_subtree_cursor.png  used on input line 71.
+(pdftex.def)             Requested size: 227.64894pt x 150.13339pt.
+
+Overfull \hbox (25.05754pt too wide) in paragraph at lines 88--130
+ [] 
+ []
+
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.67 
-      [2.2]
-<assets/ast_root_cursor.png, id=126, 968.61874pt x 594.22pt>
-File: assets/ast_root_cursor.png Graphic file (type png)
-<use assets/ast_root_cursor.png>
-Package pdftex.def Info: assets/ast_root_cursor.png  used on input line 76.
-(pdftex.def)             Requested size: 227.64894pt x 139.65079pt.
-<assets/ast_subtree_cursor.png, id=128, 937.5025pt x 618.31pt>
-File: assets/ast_subtree_cursor.png Graphic file (type png)
-<use assets/ast_subtree_cursor.png>
-Package pdftex.def Info: assets/ast_subtree_cursor.png  used on input line 80.
-(pdftex.def)             Requested size: 227.64894pt x 150.13339pt.
-) (./sections/conclusion.tex
-Underfull \vbox (badness 3482) has occurred while \output is active []
-
-
+l.132 \end{figure}
+                   [2.2]pdfTeX warning (ext4): destination with the same identi
+fier (name{page.}) has been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.181         | 
+                SeqComp (Edt a) (Edt a) [3.3 <./assets/ast_root_cursor.png> <./
+assets/ast_subtree_cursor.png>]) (./sections/conclusion.tex
 Underfull \hbox (badness 10000) in paragraph at lines 63--67
 
  []
@@ -1621,8 +1628,8 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.75 \subsubsection
-                   {Saving and loading project} [3.3]) (./pepm2023.bbl
+l.67 \subsubsection
+                   {View following cursor} [4.4]) (./pepm2023.bbl
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
 (Font)              scaled to size 8.0pt on input line 48.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
@@ -1630,24 +1637,23 @@ LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
 LaTeX Info: Redefining \tempurl on input line 85.
 )
 - LAST -
-Extra skip:49.82399pt
-Left:193.0pt/1.71999pt
+Extra skip:94.82399pt
+Left:238.0pt/1.71999pt
 Right:143.0pt/1.896pt
-Output:193.5pt
+Output:238.0pt
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.143 \end{document}
-                     [4.4 <./assets/ast_root_cursor.png> <./assets/ast_subtree_
-cursor.png>]
+                     [5.5]
 Package atveryend Info: Empty hook `BeforeClearDocument' on input line 143.
 Package atveryend Info: Empty hook `AfterLastShipout' on input line 143.
  (./pepm2023.aux)
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 143.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 143.
 Package rerunfilecheck Info: File `pepm2023.out' has not changed.
-(rerunfilecheck)             Checksum: D3A71470F9532EF88F152E1A1622B926;2194.
+(rerunfilecheck)             Checksum: 4912F53C51A5ED4CF39773D01A377976;2195.
 
 
 LaTeX Font Warning: Size substitutions with differences
@@ -1658,13 +1664,13 @@ LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 21573 strings out of 492649
- 324939 string characters out of 6129622
- 461596 words of memory out of 5000000
- 24480 multiletter control sequences out of 15000+600000
- 239035 words of font info for 413 fonts, out of 8000000 for 9000
+ 21667 strings out of 492649
+ 326128 string characters out of 6129622
+ 469806 words of memory out of 5000000
+ 24519 multiletter control sequences out of 15000+600000
+ 238489 words of font info for 409 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
- 60i,28n,94p,815b,1139s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 60i,28n,94p,815b,1931s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/newtx/libertinealt.enc}{/
 usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_fygcup.enc}{/u
 sr/local/texlive/2018/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}{/usr/
@@ -1696,10 +1702,10 @@ mi7.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/txfonts/rtxr.pfb
 ocal/texlive/2018/texmf-dist/fonts/type1/public/txfonts/txsyc.pfb></usr/local/t
 exlive/2018/texmf-dist/fonts/type1/public/newtx/txsys.pfb></usr/local/texlive/2
 018/texmf-dist/fonts/type1/public/newtx/zxlri.pfb>
-Output written on pepm2023.pdf (4 pages, 706969 bytes).
+Output written on pepm2023.pdf (5 pages, 713014 bytes).
 PDF statistics:
- 265 PDF objects out of 1000 (max. 8388607)
- 204 compressed objects within 3 object streams
- 42 named destinations out of 1000 (max. 500000)
+ 342 PDF objects out of 1000 (max. 8388607)
+ 280 compressed objects within 3 object streams
+ 103 named destinations out of 1000 (max. 500000)
  65671 words of extra memory for PDF output out of 74296 (max. 10000000)
 
