@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.5.29)  22 SEP 2022 17:40
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.5.29)  22 SEP 2022 19:52
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1604,32 +1604,41 @@ File: assets/ast_subtree_cursor.png Graphic file (type png)
 Package pdftex.def Info: assets/ast_subtree_cursor.png  used on input line 71.
 (pdftex.def)             Requested size: 227.64894pt x 150.13339pt.
 
-Overfull \hbox (25.05754pt too wide) in paragraph at lines 88--130
- [] 
- []
+
+LaTeX Warning: Reference `eq:welltypedconf' on page  undefined on input line 84
+.
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.132 \end{figure}
-                   [2.2]pdfTeX warning (ext4): destination with the same identi
-fier (name{page.}) has been already used, duplicate ignored
+l.87 
+      [2.2]
+Overfull \hbox (25.05754pt too wide) in paragraph at lines 100--142
+ [] 
+ []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
+een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.181         | 
-                SeqComp (Edt a) (Edt a) [3.3 <./assets/ast_root_cursor.png> <./
-assets/ast_subtree_cursor.png>]) (./sections/conclusion.tex
+l.163                    ]
+                           [3.3 <./assets/ast_root_cursor.png> <./assets/ast_su
+btree_cursor.png>]) (./sections/conclusion.texpdfTeX warning (ext4): destinatio
+n with the same identifier (name{page.}) has been already used, duplicate ignor
+ed
+<to be read again> 
+                   \relax 
+l.49 
+      [4.4]
 Underfull \hbox (badness 10000) in paragraph at lines 63--67
 
  []
 
-pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
-een already used, duplicate ignored
-<to be read again> 
-                   \relax 
-l.67 \subsubsection
-                   {View following cursor} [4.4]) (./pepm2023.bbl
+) (./pepm2023.bbl
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
 (Font)              scaled to size 8.0pt on input line 48.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
@@ -1637,10 +1646,10 @@ LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
 LaTeX Info: Redefining \tempurl on input line 85.
 )
 - LAST -
-Extra skip:94.82399pt
-Left:238.0pt/1.71999pt
-Right:143.0pt/1.896pt
-Output:238.0pt
+Extra skip:24.464pt
+Left:334.0pt/2.36pt
+Right:310.0pt/1.896pt
+Output:334.0pt
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
@@ -1662,15 +1671,18 @@ LaTeX Font Warning: Size substitutions with differences
 
 LaTeX Warning: There were undefined references.
 
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
  ) 
 Here is how much of TeX's memory you used:
- 21667 strings out of 492649
- 326128 string characters out of 6129622
- 469806 words of memory out of 5000000
- 24519 multiletter control sequences out of 15000+600000
- 238489 words of font info for 409 fonts, out of 8000000 for 9000
+ 21672 strings out of 492649
+ 326230 string characters out of 6129622
+ 477806 words of memory out of 5000000
+ 24520 multiletter control sequences out of 15000+600000
+ 238762 words of font info for 411 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
- 60i,28n,94p,815b,1931s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 60i,28n,94p,815b,1364s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/newtx/libertinealt.enc}{/
 usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/libertine/lbtn_fygcup.enc}{/u
 sr/local/texlive/2018/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}{/usr/
@@ -1701,11 +1713,12 @@ mi7.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/txfonts/rtxr.pfb
 /usr/local/texlive/2018/texmf-dist/fonts/type1/public/txfonts/txsya.pfb></usr/l
 ocal/texlive/2018/texmf-dist/fonts/type1/public/txfonts/txsyc.pfb></usr/local/t
 exlive/2018/texmf-dist/fonts/type1/public/newtx/txsys.pfb></usr/local/texlive/2
-018/texmf-dist/fonts/type1/public/newtx/zxlri.pfb>
-Output written on pepm2023.pdf (5 pages, 713014 bytes).
+018/texmf-dist/fonts/type1/public/newtx/zxlr.pfb></usr/local/texlive/2018/texmf
+-dist/fonts/type1/public/newtx/zxlri.pfb>
+Output written on pepm2023.pdf (5 pages, 724166 bytes).
 PDF statistics:
- 342 PDF objects out of 1000 (max. 8388607)
- 280 compressed objects within 3 object streams
- 103 named destinations out of 1000 (max. 500000)
+ 349 PDF objects out of 1000 (max. 8388607)
+ 285 compressed objects within 3 object streams
+ 104 named destinations out of 1000 (max. 500000)
  65671 words of extra memory for PDF output out of 74296 (max. 10000000)
 

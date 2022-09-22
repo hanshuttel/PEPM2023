@@ -28,7 +28,7 @@ restrictions are as follows.
 
 
 A configuration of a well-formed AST and a well-formed editor expression is
-likewise considered well-formed.\\
+likewise considered well-formed.
 
 As mentioned in section \ref{principles}, we type check with respect to a
 configuration. We say that a configuration is well-typed iff; the AST is both
@@ -37,13 +37,13 @@ is both well-formed and well-typed for the path to the cursor in the AST and
 the editor context containing all valid paths in the AST \pepm. I.e. equation
 (\ref{eq:welltypedconf}) where $\emptyset$ is the empty AST context, $p$ is the
 path from the root to the cursor in $a$, and $\ctx{e}$ is the editor context
-containing some pair for each valid path in $a$. \\
+containing some pair for each valid path in $a$. 
 \begin{equation}\label{eq:welltypedconf}
   \TConfiguration
 \end{equation}
 
 A well-typed configuration guarantees that the AST remains well-typed after
-reduction. \\
+reduction.
 
 In the implementation, we type check a configuration just before it is
 evaluated. Since we only have a single AST that we perpetually update and we
@@ -52,7 +52,7 @@ starting configuration) and well-formed throughout its lifetime (with a
 type-level guarantee from Elm), we could actually omit the type checking for
 the AST. However we want to model the calculus as close as possible and thus
 still do the full type check from equation (\ref{eq:welltypedconf}) of a
-configurations just before reduction.\\
+configurations just before reduction.
 
 In this section we discuss types and auxiliary functions that we use for type
 checking, define the type rules and discuss the implementation of the actual
@@ -61,7 +61,7 @@ type checker.
 \subsection{Context and path handling}
 Godiksen et al.\pepm~describe a number of ways to handle paths and contexts for
 type checking, including notations, operations, operators and restrictions.
-Let us start with contexts.\\
+Let us start with contexts.
 
 Since the context type $\elm{Ctx}$ is treated as a custom data structure, we
 have implemented a suite of auxiliary functions for interacting with the type.
@@ -164,7 +164,7 @@ called $\elm{push}$ to simply add the pair to the front of the list.
 The other function $\elm{join}$ combines two given contexts by recursively
 calling $\elm{bind}$ on the head of the second context and the first context.
 Thus it combines the two where for overlapping keys it keeps the keys from the
-second context. \\
+second context. 
 
 Regarding paths, we again require some functionality for type checking, which
 we achieve by a suite of auxiliary functions, all of which have trivial
@@ -600,7 +600,7 @@ the empty set.
 We also note that we can use \texttt{limits} and \texttt{follows} to find the
 set of safe editor type context bindings given a condition holds. Specifically
 the safe bindings are the intersection of the sets from \texttt{follows} called
-on every node modifier in the set from \texttt{limits}.\\
+on every node modifier in the set from \texttt{limits}.
 
 In Godiksen et al.\pepm~they define an $update$ function that is used to update
 editor type contexts $\ctx{e}$ given a context and a set of bindings. They
@@ -922,7 +922,7 @@ We show the type rules for AST type judgments in figure \ref{fig:asttyperules}
 and type rules for editor expression type judgments in figure
 \ref{fig:edttyperules}, as they are defined by Godiksen et al. \pepm. In this
 subsection we will argue for the type rules and go over how we implemented
-them, starting with AST type rules.\\
+them, starting with AST type rules.
 
 \begin{figure*}
   \center
@@ -1262,7 +1262,7 @@ for the definition of a well-typed configuration in equation
 subsection. To find the path to the cursor, it uses the helper function
 $\elm{pthToCursor}$ and to find the editor type context containing a binding
 for each valid path in $a$ it uses $\elm{findCtx}$. Let us first go over the
-predicate $\elm{Ast.wellTyped}$.\\
+predicate $\elm{Ast.wellTyped}$.
 
 The \elm{Ast.wellTyped} function also has a helper function called \elm{typed}.
 This refers the the $\elm{Ast.typed}$ from the last subsection where we

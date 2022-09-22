@@ -76,6 +76,18 @@ Switching between the two visualizations is immediate in the user interface.
 
 \subsection{Implementing a type checker}
 
+We type check with respect to a
+configuration. We say that a configuration is well-typed iff; the AST is both
+well-formed and well-typed in the empty AST context and the editor expression
+is both well-formed and well-typed for the path to the cursor in the AST and
+the editor context containing all valid paths in the AST \pepm. I.e. equation
+(\ref{eq:welltypedconf}) where $\emptyset$ is the empty AST context, $p$ is the
+path from the root to the cursor in $a$, and $\ctx{e}$ is the editor context
+containing some pair for each valid path in $a$.
+
+\begin{equation}\label{eq:welltypedconf}
+  \TConfiguration
+\end{equation}
 
 \subsection{Building editor expressions}
 
