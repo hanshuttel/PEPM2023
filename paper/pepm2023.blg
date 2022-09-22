@@ -10,52 +10,50 @@ Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
 Reallocated global_strs (elt_size=20001) to 20 items from 10.
 Reallocated glb_str_end (elt_size=4) to 20 items from 10.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
-Warning--numpages field, but no articleno or eid field, in 10.1145/332040.332481
 Warning--numpages field, but no articleno or eid field, in 10.1145/3441296.3441393
 Warning--empty publisher in conf/popl/Hazelnut17
 Warning--empty address in conf/popl/Hazelnut17
 Warning--page numbers missing in both pages and numpages fields in conf/popl/Hazelnut17
-Warning--numpages field, but no articleno or eid field, in 10.1145/1592761.1592779
 Warning--numpages field, but no articleno or eid field, in 10.1145/358746.358755
-You've used 5 entries,
+You've used 3 entries,
             5732 wiz_defined-function locations,
-            1334 strings with 15978 characters,
-and the built_in function-call counts, 7199 in all, are:
-= -- 844
-> -- 356
+            1318 strings with 15334 characters,
+and the built_in function-call counts, 3989 in all, are:
+= -- 462
+> -- 164
 < -- 0
-+ -- 125
-- -- 120
-* -- 575
-:= -- 756
-add.period$ -- 24
-call.type$ -- 5
-change.case$ -- 48
-chr.to.int$ -- 5
-cite$ -- 12
-duplicate$ -- 588
-empty$ -- 383
-format.name$ -- 140
-if$ -- 1686
++ -- 59
+- -- 56
+* -- 294
+:= -- 403
+add.period$ -- 14
+call.type$ -- 3
+change.case$ -- 24
+chr.to.int$ -- 3
+cite$ -- 8
+duplicate$ -- 347
+empty$ -- 229
+format.name$ -- 68
+if$ -- 931
 int.to.chr$ -- 2
 int.to.str$ -- 1
-missing$ -- 23
-newline$ -- 93
-num.names$ -- 40
-pop$ -- 213
+missing$ -- 14
+newline$ -- 70
+num.names$ -- 24
+pop$ -- 130
 preamble$ -- 1
-purify$ -- 93
+purify$ -- 51
 quote$ -- 0
-skip$ -- 244
+skip$ -- 140
 stack$ -- 0
-substring$ -- 428
-swap$ -- 94
+substring$ -- 244
+swap$ -- 49
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 122
-warning$ -- 7
-while$ -- 28
+type$ -- 76
+warning$ -- 5
+while$ -- 18
 width$ -- 0
-write$ -- 143
-(There were 7 warnings)
+write$ -- 99
+(There were 5 warnings)

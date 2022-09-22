@@ -67,9 +67,9 @@
 
 % Editor expressions
 \newcommand\pre[2]{#1.#2}
-\newcommand\bicond[3]{#1 \Rightarrow #2|#3}
-\newcommand\seqcomp[2]{#1 \ggg #2}
-\newcommand\rec[2]{\texttt{rec}~#1.#2}
+\newcommand\bicond[3]{\ensuremath{#1 \Rightarrow #2 \mid #3}}
+\newcommand\seqcomp[2]{\ensuremath{#1 \ggg #2}}
+\newcommand\rec[2]{\ensuremath{\texttt{rec}~#1.#2}}
 \newcommand\call[1]{#1}
 \newcommand\nil{\mathbf{0}}
 \newcommand\Exp[2]{\breakpoint{#1,\, #2}}
@@ -86,8 +86,8 @@
 
 % Prefix commands
 \newcommand\eval{\texttt{eval}}
-\newcommand\sub[1]{\{ #1 \}}
-\newcommand\child[1]{\texttt{child}~#1}
+\newcommand\sub[1]{\ensuremath{\{ #1 \}}}
+\newcommand\child[1]{\ensuremath{\texttt{child}~#1}}
 \newcommand\parent{\texttt{parent}}
 
 \newcommand\aep{\textbf{Aep}}

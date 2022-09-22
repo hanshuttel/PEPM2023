@@ -29,7 +29,24 @@ Editor expressions are given by the following formation rules.
   \mid \aamHole \label{aam-formation-rules}
 \end{align}
 
-Expressions $E$ involve 
+Editor calculus expressions $E$ can examine or modify the subtree of the
+AST that is currently pointed to by the cursor. Expressions are built
+from atomic edit action prefixes $\pi$. The \sub{D} prefix substitutes
+the content under the cursor by the term constructor $D$. Moreover,
+conditional expressions \bicond{\phi}{E_1}{E_2} will proceed as $E_1$
+if the condition $\phi$ holds for the current subtree and as $E_2$
+otherwise. We allow for recursive expressions \rec{x}{E} where $x$
+ranges over recursion variables (we only consider expressions where
+every $x$ is bound by some \rec{x}{E}) and sequential composition
+\seqcomp{E_1}{E_2}.
+
+Conditions $\phi$ are conditions from a spatial logic on ASTs that contains
+the usual propositional connectives as well as the modalities
+$\at{\phi}$, $\possibly{\phi}$ and $\necessarily{\phi}$. The formula
+$\at{\phi}$ expresses that $\phi$ holds for the current subtree, while
+$\possibly{\phi}$ expresses that $\phi$ in some subtree of the current
+subtree and $\necessarily{\phi}$ expresses that $\phi$ holds
+everywhere in the current subtree.
 
 \subsection{Semantics}
 
@@ -80,7 +97,10 @@ recursive editor expressions. The last rule
 substitution or cursor movement expression of the form $\pi.E$, then we reduce
 the AST according to the labeled transition system for substitution and cursor
 movement expressions, and update the configuration to contain the editor
-expression $E$ and the new AST. 
+expression $E$ and the new AST.
+
+Finally, the $\eval$ primitive allows us to evaluate the entire AST
+(up to possible breakpoints).
 
 %%% Local Variables:
 %%% mode: latex
