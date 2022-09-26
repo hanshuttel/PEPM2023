@@ -87,6 +87,29 @@ returns $\epsilon$.
 
 \subsection{A type system}
 
+Figure \ref{fig:edttyperules} shows a selection of the type rules.
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llll}
+    % \scriptsize(T-CH-1)      & $ \TChOne $             & \scriptsize(T-REF)       & $ \TRef$                \\
+    % \scriptsize(T-CH-2)       & $ \TChTwo$               & \scriptsize(T-EVAL)      & $\TEval$               \\
+    % \scriptsize(T-PARENT)      & $ \TParent$             & \scriptsize(T-NIL)    & $\TNil$              \\
+    \scriptsize(T-SEQ)       & \scriptsize$\TSeq$ & &\\
+%    \scriptsize(T-REC)       & \scriptsize$\TRec$   & &   \\
+    % \scriptsize(T-COND)      & \scriptsize$ \TCond$  & &\\
+    % \scriptsize(T-SUB-VAR)   & $ \TSubVar$            &           & \\
+    % \scriptsize(T-SUB-CONST) & $ \TSubConst$      & &\\
+    \scriptsize(T-SUB-HOLE)  & $\TSubHole$ & &           \\
+    \scriptsize(T-SUB-ABS)   & \scriptsize$\TSubAbs$   & & \\
+    \scriptsize(T-SUB-APP)   & \scriptsize$ \TSubApp$ & & \\
+%  \scriptsize(T-SUB-BREAK) & \scriptsize$\TSubBreak$ & &
+  \end{tabular}
+  \caption{Selected type rules for editor expressions}
+  \label{fig:edttyperules}
+\end{figure*}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "../pepm2023"
