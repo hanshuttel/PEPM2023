@@ -1,30 +1,31 @@
 \section{Conclusion}
 \label{conclusion}
 
-We have implemented the
-editor calculus described by Godiksen et al. \pepm. The implementation
-includes a tool for writing editor scripts and different
-visualizations of abstract syntax trees that allows the user to move the view around and
-zoom in and out of the tree visualization.
+We have implemented the editor calculus described by Godiksen et
+al. \pepm. The implementation includes a tool for writing editor
+scripts and different visualizations of abstract syntax trees that
+allows the user to move the view around and zoom in and out of the
+tree visualization.
 
-As programs get larger, one might want to collapse subtrees. This
-comes with certain challenges for visualization. One problem is that if a subtree can be
-collapsed, we likely want to ensure that the cursor is not in that
-subtree, as the cursor would then be hidden. Similarly, if a subtree
-is collapsed, the cursor should not be able to navigate into that
-subtree.
+There are important challenges related to visualization.
 
-One could attempt to evaluate the collapsed subtree and, if it
-evaluates to a value, then show this as a summary.
+As programs get larger, it will a good idea to be able to collapse
+parts of the code. A strategy for collapsing a subtree is to attempt
+to evaluate it and, if it evaluates to a value, then show this as a
+summary.  In general, there will be certain challenges for
+visualization. If a subtree can be collapsed, we want to ensure that
+the cursor is not in that subtree, as the cursor would then be
+hidden. Similarly, if a subtree is collapsed, the cursor should not be
+able to navigate into that subtree.
 
-Another feature that would improve usability is to make the default of the view
-to follow the cursor when moving through the tree. There are a few different
-ways to do it. The editor can follow the cursor with it being centered in the
-view. Alternatively it can have the view follow whenever the cursor is near the
-edge. For either of these cases, the editor could have a button that moves the
-focus back to the cursor, making it possible to toggle between the locked and
-the free view.
-
+A feature that will improve usability is to introduce a notion of
+scrolling: make the default of the view to follow the cursor when
+moving through the tree. There are a few different ways to do it. The
+editor can follow the cursor with it being centered in the
+view. Alternatively it can have the view follow whenever the cursor is
+near the edge. For either of these cases, the editor could have a
+button that moves the focus back to the cursor, making it possible to
+toggle between the locked and the free view.
 
 %%% Local Variables:
 %%% mode: latex
