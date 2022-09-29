@@ -88,6 +88,18 @@ returns $\epsilon$.
 
 \subsection{A type system}
 
+The type rules guarantee that well-typed editor expressions can only
+build well-typed programs. In order to achieve this, type judgements
+are relative to a path $p$ in the tree and a context $\Gamma_e$
+that for any given $p_1$ gives us a pair $(\Gamma_a,\tau)$ where
+$\Gamma_a$ is a type environment such that $dom(\Gamma_a)$ is the set
+of free program variables known at the end of the path $p_1$ and
+$\tau$ is the type of the subtree located at the end of the path.
+
+Type judgements are of the form
+%
+\[ p,\Gamma_3 \vdash E : ok \]
+%
 Figure \ref{fig:edttyperules} shows a selection of the type rules.
 
 \begin{figure*}

@@ -1,4 +1,5 @@
 \section{Implementing the editor calculus}
+\label{sec:implementing}
 
 The implementation of the editor calculus requires
 
@@ -18,15 +19,17 @@ algebraic datatypes. As an example, expressions are given by the
 datatype
 
 \begin{lstlisting}[language=elm,%
-                   label={aep-without-holes-definition},%
-                   gobble=4,%
-                   caption={Formation rules (\ref{aep-formation-rules}) modeled in Elm},%
-                   ]
-    type Aep
-        = Eval
-        | Sub Aam
-        | Child Ast.Child
-        | Parent
+           label={edt-without-holes-definitions},%
+           gobble=4,%
+           caption={Formation rules (\ref{edt-formation-rules}) modeled in Elm},%
+           ]
+    type Edt
+        = Pre Aep Edt
+        | Bicond Eed Edt Edt
+        | SeqComp Edt Edt
+        | Rec Var.Id Edt
+        | Call Var.Id
+        | Nil
 \end{lstlisting}
 
 The rest of the formation rules are defined similarly.
@@ -55,7 +58,7 @@ The notation used for this representation follows that of Godiksen
 et al.~\pepm. It is straightforward but can also be
 difficult to reason about, especially as the AST grows large.
 
-We also implement another representatio, namely as a tree as seen in
+We also implement another representation, namely as a tree as seen in
 figure \ref{fig:ast_visual_tree}.
 
 Switching between the two visualizations is immediate in the user interface.
@@ -257,20 +260,10 @@ editor expression being built is in the upper left corner of the images in
 figure \ref{fig:final_ui}.
 
 \begin{figure*}
-  \center
-  \noindent\begin{minipage}{\textwidth}
-    \center
-    \includegraphics[width=0.7\textwidth]{assets/final_ui1.png}
-  \end{minipage}\hfill
-  \begin{minipage}{\textwidth}
-    \center
-    \includegraphics[width=0.7\textwidth]{assets/final_ui2.png}
-  \end{minipage}\hfill
-  \begin{minipage}{\textwidth}
-    \center
-    \includegraphics[width=0.7\textwidth]{assets/final_ui3.png}
-  \end{minipage}\hfill
-  \caption{The figures \ref{fig:ast-in-text-form} and \ref{fig:ast_visual_tree} from section \ref{design} recreated in the final UI}
+  \begin{center}
+      \includegraphics[width=0.7\textwidth]{assets/final_ui1.png}
+ \end{center}
+  \caption{A tree visualization}
   \label{fig:final_ui}
 \end{figure*}
 

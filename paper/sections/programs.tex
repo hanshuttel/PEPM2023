@@ -27,9 +27,25 @@ $\tau$, $\cursor{a}$ which denotes an expression that is directly
 underneath the cursor and $\breakpoint{a}$, which is a breakpoint --
 meaning that this occurrence of $a$ is left unevaluated.
 
+We use a big-step reduction semantics of our $\lambda$-calculus with
+reductions of the form $a \to v$; it
+will be used for defining the behaviour of the \eval primitive in the
+editor calculus. A selection of the rules can be seen in Figure \ref{fig:transitionrulesast}.
+
+\begin{figure*}[]
+  \center
+  \begin{tabular}{llll}
+    \scriptsize(B-APP)    & \scriptsize $\BApp$ &                              &              \\
+    \scriptsize(B-APPB-1) & $ \BAppBOne $       & \scriptsize\text{(B-APPB-2)} & $ \BAppBTwo$ \\
+    \scriptsize(B-APPH-1) & $ \BAppHOne $       & \scriptsize\text{(B-APPH-2)} & $ \BAppHTwo$
+  \end{tabular}
+  \caption{Selection of big-step reduction rules for programs}
+  \label{fig:transitionrulesast}
+\end{figure*}
+
 Types $\tau$ are given by the formation rules
 %
-\[ \tau ::=  \tau_1 \rightarrow \tau_:2 \mid b \]
+\[ \tau ::=  \tau_1 \rightarrow \tau_2 \mid b \]
 %
 where $b$ ranges over a set of base types.
 

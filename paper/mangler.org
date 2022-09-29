@@ -1,0 +1,6 @@
+* NTT: Logikken (hvordan implementer man tjek af betingelser?)
+* H: Reduktionssemantik for lambda-kalkyle?
+* H: Mere om typesystemet (typedomme)
+* H: Er skærmbillederne de rette? (måske slette de to nederste, for det ene findes allerede i en anden, særskilt figur og det andet viser kun cursor-flytning)
+* NTT: Mere om implementation: Typetjek [uddybe], editorudtryk-byggeren [forkorte dette]
+* H: Opbygningsregler (6) som datatype, ikke (4)
