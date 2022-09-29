@@ -1,6 +1,8 @@
 \section{Programs}
 
-The program terms that editor expression terms can build and modify are terms of a simply typed $\lambda$-calculus extended with breakpoints and holes. The formation rules are 
+The program terms that editor expression terms can build and modify
+are terms of a simply typed $\lambda$-calculus extended with
+breakpoints and holes. The formation rules are
 
 \begin{align}
   D & ::= \var{x}
@@ -18,7 +20,34 @@ The program terms that editor expression terms can build and modify are terms of
   \mid \bind{\hole}{\tau} \label{eq:lan-mod-ast}
 \end{align}
 
-The new constructions are $\bind{\aamHole}{\tau}$ which denotes a hole annotated with type $\tau$, $\cursor{a}$ which denotes an expression that is directly underneath the cursor and $\breakpoint{a}$, which is a breakpoint -- meaning that this occurrence of $a$ is left unevaluated.
+Terms are extended with constructs that describe how the editor can
+inspect and modify programs. The new constructs are
+$\bind{\aamHole}{\tau}$ which denotes a hole annotated with type
+$\tau$, $\cursor{a}$ which denotes an expression that is directly
+underneath the cursor and $\breakpoint{a}$, which is a breakpoint --
+meaning that this occurrence of $a$ is left unevaluated.
+
+Types $\tau$ are given by the formation rules
+%
+\[ \tau ::=  \tau_1 \rightarrow \tau_:2 \mid b \]
+%
+where $b$ ranges over a set of base types.
+
+Type judgements are of the form $\Gamma_a \vdash a : \tau$, where
+$\Gamma_a$ is a type context. The type rules are given in Figure
+\ref{fig:asttyperules}.
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(T-VAR)    & $ \TVar $   & \scriptsize(T-CONST) & $ \TConst$ & \scriptsize(T-CURSOR) & $ \TCursor $ \\
+    \scriptsize(T-LAMBDA) & $ \TLambda$ & \scriptsize(T-BREAK) & $\TBreak$  & \scriptsize(T-HOLE)   & $\THole$     \\
+    \scriptsize(T-APP)    & $\TApp$     &                      &            &                       &
+  \end{tabular}
+  \caption{AST type rules}
+  \label{fig:asttyperules}
+\end{figure*}
 
 %%% Local Variables:
 %%% mode: latex

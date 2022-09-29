@@ -7,16 +7,15 @@ scripts and different visualizations of abstract syntax trees that
 allows the user to move the view around and zoom in and out of the
 tree visualization.
 
-There are important challenges related to visualization.
-
-As programs get larger, it will a good idea to be able to collapse
-parts of the code. A strategy for collapsing a subtree is to attempt
-to evaluate it and, if it evaluates to a value, then show this as a
-summary.  In general, there will be certain challenges for
-visualization. If a subtree can be collapsed, we want to ensure that
-the cursor is not in that subtree, as the cursor would then be
-hidden. Similarly, if a subtree is collapsed, the cursor should not be
-able to navigate into that subtree.
+There are important challenges related to visualization. As programs
+get larger, it will a good idea to be able to collapse parts of the
+code. A strategy for collapsing a subtree is to attempt to evaluate it
+and, if it evaluates to a value, then show this as a summary.  In
+general, there will be certain challenges for visualization. If a
+subtree can be collapsed, we want to ensure that the cursor is not in
+that subtree, as the cursor would then be hidden. Similarly, if a
+subtree is collapsed, the cursor should not be able to navigate into
+that subtree.
 
 A feature that will improve usability is to introduce a notion of
 scrolling: make the default of the view to follow the cursor when

@@ -238,7 +238,41 @@ impossible. The \texttt{toCompleted} function cannot take an
 expression and still have bugs, since we have constrained the types to create
 type level guarantees.
 
+\subsection{The user interface}
+\label{user-interface}
 
+The user interface allows for two different visualizations of
+programs: a textual representation and a tree representation. The
+implementation of the textual representation is simple: A conversion
+of the AST data structure to HTML with syntax highlighting . The last
+image in figure \ref{fig:final_ui} shows this.
+
+The implementation of the tree representation is more involved. Figure
+\ref{fig:ast_visual_tree} shows an example of this
+
+The visualization of the editor expression builder is similar to the textual
+representation of ASTs. We implemented a function that given an \texttt{Edt}
+returns HTML. An example of an
+editor expression being built is in the upper left corner of the images in
+figure \ref{fig:final_ui}.
+
+\begin{figure*}
+  \center
+  \noindent\begin{minipage}{\textwidth}
+    \center
+    \includegraphics[width=0.7\textwidth]{assets/final_ui1.png}
+  \end{minipage}\hfill
+  \begin{minipage}{\textwidth}
+    \center
+    \includegraphics[width=0.7\textwidth]{assets/final_ui2.png}
+  \end{minipage}\hfill
+  \begin{minipage}{\textwidth}
+    \center
+    \includegraphics[width=0.7\textwidth]{assets/final_ui3.png}
+  \end{minipage}\hfill
+  \caption{The figures \ref{fig:ast-in-text-form} and \ref{fig:ast_visual_tree} from section \ref{design} recreated in the final UI}
+  \label{fig:final_ui}
+\end{figure*}
 
 %%% Local Variables:
 %%% mode: latex
