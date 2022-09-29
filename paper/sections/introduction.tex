@@ -37,17 +37,10 @@ In order to create editor expressions that are used to traverse and modify the
 ASTs, we introduce an editor expression builder that allows us to
 iteratively build editor expressions.
 
-This paper is structured as follows. Preliminaries are listed in section
-\ref{preliminaries}. The overall principles of Godiksen et al.s editor calculus
-are described in section \ref{principles}. In section \ref{design} we introduce
-the design of the implementation. Section \ref{modeling} is about how we model
-the calculus terms, types and the editor expression builder. The evaluation
-rules are defined in section \ref{evaluation} together with implementation and
-execution of said rules. In section \ref{type-checking} we define the type
-rules and describe the implementation of the type checker. We discuss the user
-interface and how it combines the calculus in section \ref{user-interface}. In
-the last section - section \ref{conclusion} - we conclude our project and
-discuss future work.
+The main part of the rest of the paper is structured as follows. The syntax, semantics and type
+system of the editor calculus are described in section
+\ref{sec:editorcalculus}. In section \ref{sec:implementing} we outline
+the design of the implementation.
 
 
 %%% Local Variables:
