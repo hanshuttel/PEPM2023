@@ -154,7 +154,7 @@ Editor expression type judgments are a bit more involved. Since editor
 expressions get their type information from AST and not themselves, we use Bool
 as return type rather than Maybe as we did for AST rules. We require that the
 editor expression is completed. As we did for AST type judgements, we pattern
-match on a given editor expression and type checks on a case by case basis.
+match on a given editor expression and type check on a case by case basis.
 E.g. regarding substitution with abstractions, seen in the rule
 \hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path $p$ is
 valid in the editor type context $\ctx{e}$. Then we find the new context
