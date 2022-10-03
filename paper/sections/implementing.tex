@@ -3,9 +3,9 @@
 The implementation of the editor calculus requires
 
 \begin{itemize}
-\item implementing the semantics of the calculus and allowing for an
-  appropriate visualization of editing
-\item implementing a type checker based on the type system
+  \item implementing the semantics of the calculus and allowing for an
+        appropriate visualization of editing
+  \item implementing a type checker based on the type system
 \end{itemize}
 
 but perhaps surprisingly, it involves finding a way to script editor
@@ -28,8 +28,54 @@ datatype
         | Child Ast.Child
         | Parent
 \end{lstlisting}
-
 The rest of the formation rules are defined similarly.
+
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)  & $\AtHole$  \\
+    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK) & $\AtBreak$ \\
+    \scriptsize(POS-TRIVIAL) & $\PosTrivial$                                                                              % & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
+    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$                                      % & \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
+    %\scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK)   & $\NecBreak$
+  \end{tabular}
+  \caption{Selected condition reduction rules}
+  \label{fig:conditionreductionrules}
+\end{figure*}
+
+
+With regards to conditions, the checks for the three modalities are implemented
+in the functions $\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$,
+and checks the current AST under the cursor.
+
+For the $\elm{isEquivalent}$ function the
+\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
+pattern match over the parameters.
+The function applies the rules very straightforwardly such that if one of the
+clauses holds then it returns $\elm{True}$ and if not then it returns
+$\elm{False}$, where the only addition is the usual $\elm{never}$ function
+for a node modifier hole. In rule
+\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
+constants have to be equal or just some constant in order for $\at(\const c)$ to
+hold. We chose that the constants must be equal.
+For all three of the functions, we discard unused parameters of the term
+constructors, such as variable IDs and type annotations.
+
+The $\elm{possibly}$ function is reduced by first checking whether we have the
+trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
+not, we check whether any of the other rules holds, i.e. if we are at an
+application, abstraction or breakpoint, it calls recursively on the children of
+the AST node. It deviates from the rules in that it combine the rules
+\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
+or-operator.
+
+The $\elm{necessarily}$ function is implemented in the same manner as
+$\elm{possible}$, with the only difference being if it is not the trivial case
+and the AST node is an application, then it uses a logical and-operator instead
+of a logical or-operator.
+
 
 \subsection{Abstract syntax trees}
 
@@ -42,13 +88,13 @@ A simple representation would be to represent the AST in a textual form,
 as seen in figure \ref{fig:ast-in-text-form}.
 
 \begin{figure}[H]
-    \Large
-    \begin{equation*}
-      \cursor{(\app{\breakpoint{(\lambda{x}{(\app{x}{x})})}}
+  \Large
+  \begin{equation*}
+    \cursor{(\app{\breakpoint{(\lambda{x}{(\app{x}{x})})}}
       {(\lambda{x}{(\app{x}{x})})})}
-    \end{equation*}
-    \caption{An AST visualized in textual form.}
-    \label{fig:ast-in-text-form}
+  \end{equation*}
+  \caption{An AST visualized in textual form.}
+  \label{fig:ast-in-text-form}
 \end{figure}
 
 The notation used for this representation follows that of Godiksen
@@ -137,18 +183,18 @@ type check the next editor expression $E$ in the new context $\ctx{e}'$.
 \subsection{Building editor expressions}
 Editor expressions written in a text field would have to be lexed and parsed.
 This introduces syntax errors to the editor with regards to editor expressions,
-which goes against the spirit of the editor. Hence we created an builder to
+which goes against the spirit of the editor. Hence we created a way to
 build editor expressions in a similar manner to ASTs.
 
-To build editor expressions, we need to introduce holes to the editor
+In order to build them, we need to introduce holes to the editor
 expressions. We define a hole term constructor for each type of editor
 expression, as seen in figure \ref{fig:editorexpressionswithholes}
 
 \begin{figure}[H]
-    \center
-    \begin{tabular}{llll}
+  \center
+  \begin{tabular}{llll}
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -158,7 +204,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | AepHole
         \end{lstlisting} &
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -168,7 +214,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | EedHole
         \end{lstlisting} \\
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -178,7 +224,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | EdtHole
         \end{lstlisting} &
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -187,9 +233,9 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                     $\vdots$
                 | AamHole
         \end{lstlisting}
-    \end{tabular}
-    \caption{Editor expression definitions with holes}
-    \label{fig:editorexpressionswithholes}
+  \end{tabular}
+  \caption{Editor expression definitions with holes}
+  \label{fig:editorexpressionswithholes}
 \end{figure}
 
 We are now able to build editor expressions by initializing the editor
@@ -274,48 +320,4 @@ figure \ref{fig:final_ui}.
 %%% TeX-master: "../pepm2023"
 %%% End:
 
-\subsection{Conditions}
 
-\begin{figure*}
-  \center
-  \renewcommand{\arraystretch}{2}
-  \begin{tabular}{llllll}
-    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)   & $\AtHole$   \\
-    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK)  & $\AtBreak$  \\
-    \scriptsize(POS-TRIVIAL) & $\PosTrivial$ & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
-    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$ &   \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
-    \scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK) & $\NecBreak$
-  \end{tabular}
-  \caption{Condition reduction rules}
-  \label{fig:conditionreductionrules}
-\end{figure*}
-
-The checks for the three modalities are implemented in the functions
-$\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$, and checks the
-current AST under the cursor.
-
-For the $\elm{isEquivalent}$ function the
-\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
-pattern match over the parameters.
-The function applies the rules very straightforwardly such that if one of the
-clauses holds then it returns $\elm{True}$ and if not then it returns
-$\elm{False}$, where the only addition is the usual $\elm{never}$ function
-for a node modifier hole. In rule
-\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
-constants have to be equal or just some constant in order for $\at(\const c)$ to
-hold. We chose that the constants must be equal.
-For all three of the functions, we discard unused parameters of the term
-constructors, such as variable IDs and type annotations.
-
-The $\elm{possibly}$ function is reduced by first checking whether we have the
-trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
-not, we check whether any of the other rules holds, i.e. if we are at an
-application, abstraction or breakpoint, it calls recursively on the children of
-the AST node. It deviates from the rules in that it combine the rules
-\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
-or-operator.
-
-The $\elm{necessarily}$ function is implemented in the same manner as
-$\elm{possible}$, with the only difference being if it is not the trivial case
-and the AST node is an application, then it uses a logical and-operator instead
-of a logical or-operator.
