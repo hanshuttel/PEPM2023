@@ -35,13 +35,13 @@ The rest of the formation rules are defined similarly.
   \center
   \renewcommand{\arraystretch}{2}
   \begin{tabular}{llllll}
-    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)     & $\AtHole$     \\
-    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK)    & $\AtBreak$    \\
-    \scriptsize(POS-TRIVIAL) & $\PosTrivial$ & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK)   & $\PosBreak$   \\
-    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$ & \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
-    \scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK)   & $\NecBreak$
+    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)  & $\AtHole$  \\
+    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK) & $\AtBreak$ \\
+    \scriptsize(POS-TRIVIAL) & $\PosTrivial$                                                                              % & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
+    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$                                      % & \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
+    %\scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK)   & $\NecBreak$
   \end{tabular}
-  \caption{Condition reduction rules}
+  \caption{Selected condition reduction rules}
   \label{fig:conditionreductionrules}
 \end{figure*}
 
@@ -157,7 +157,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 = Eval
                     $\vdots$
                 | AepHole
-        \end{lstlisting}  &
+        \end{lstlisting} &
 
     \begin{lstlisting}[language=elm,%
                             gobble=8,%
