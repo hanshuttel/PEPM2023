@@ -89,6 +89,51 @@ containing some pair for each valid path in $a$.
   \TConfiguration
 \end{equation}
 
+We have implemented the AST type rules in a function that pattern matches on
+the given AST. E.g. for abstractions we follow the rule
+\hyperref[fig:asttyperules]{(T-LAMBDA)} straight forward by judging the type of
+its subtree and then wrapping it in the abstraction type, remembering to add
+the binding to the context.
+
+\begin{lstlisting}[language=elm,%
+                    gobble=8,%
+                    mathescape,%
+                    ]
+        Lambda x tau a_ ->
+            Maybe.map (TLambda tau) <|
+                typed a_ <| Ctx.bind x tau actx
+\end{lstlisting}
+
+Editor expression type judgments are a bit more involved. Since editor
+expressions get their type information from AST and not themselves, we use Bool
+as return type rather than Maybe as we did for AST rules. We require that the
+editor expression is completed. As we did for AST type judgements, we pattern
+match on a given editor expression and type checks on a case by case basis.
+E.g. regarding substitution with abstractions, seen in the rule
+\hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path $p$ is
+valid in the editor type context $\ctx{e}$. Then we find the new context
+$\ctx{e}'$ by adding two new bindings to $\bar{p}$ and check for consistency
+between the bound type and the type of the given expression, and we recursively
+type check the next editor expression $E$ in the new context $\ctx{e}'$.
+\begin{lstlisting}[language=elm,%
+                    gobble=8,%
+                    mathescape,%
+                    ]
+        Pre (Aep.Sub (Aam.Lambda x tau1 tau2)) e ->
+            case Ctx.get p ectx of
+                Just (actx, atyp) -> let ectx_ =
+                  Ctx.bind (Pth.extend p Ast.One)
+                  (Ctx.bind x tau1 actx, tau2) <|
+                    Ctx.bind p
+                    (actx, Ast.TLambda tau1 tau2)
+                      <| restrictBarPath p ectx
+                  in
+                  Ast.isConsistent atyp
+                    (Ast.TLambda tau1 tau2)
+                  && typed p ectx_ e
+                Nothing -> False
+\end{lstlisting}
+
 \subsection{Building editor expressions}
 Editor expressions written in a text field would have to be lexed and parsed.
 This introduces syntax errors to the editor with regards to editor expressions,
