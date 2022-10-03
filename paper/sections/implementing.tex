@@ -28,8 +28,54 @@ datatype
         | Child Ast.Child
         | Parent
 \end{lstlisting}
-
 The rest of the formation rules are defined similarly.
+
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)     & $\AtHole$     \\
+    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK)    & $\AtBreak$    \\
+    \scriptsize(POS-TRIVIAL) & $\PosTrivial$ & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK)   & $\PosBreak$   \\
+    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$ & \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
+    \scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK)   & $\NecBreak$
+  \end{tabular}
+  \caption{Condition reduction rules}
+  \label{fig:conditionreductionrules}
+\end{figure*}
+
+
+With regards to conditions, the checks for the three modalities are implemented
+in the functions $\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$,
+and checks the current AST under the cursor.
+
+For the $\elm{isEquivalent}$ function the
+\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
+pattern match over the parameters.
+The function applies the rules very straightforwardly such that if one of the
+clauses holds then it returns $\elm{True}$ and if not then it returns
+$\elm{False}$, where the only addition is the usual $\elm{never}$ function
+for a node modifier hole. In rule
+\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
+constants have to be equal or just some constant in order for $\at(\const c)$ to
+hold. We chose that the constants must be equal.
+For all three of the functions, we discard unused parameters of the term
+constructors, such as variable IDs and type annotations.
+
+The $\elm{possibly}$ function is reduced by first checking whether we have the
+trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
+not, we check whether any of the other rules holds, i.e. if we are at an
+application, abstraction or breakpoint, it calls recursively on the children of
+the AST node. It deviates from the rules in that it combine the rules
+\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
+or-operator.
+
+The $\elm{necessarily}$ function is implemented in the same manner as
+$\elm{possible}$, with the only difference being if it is not the trivial case
+and the AST node is an application, then it uses a logical and-operator instead
+of a logical or-operator.
+
 
 \subsection{Abstract syntax trees}
 
@@ -229,48 +275,4 @@ figure \ref{fig:final_ui}.
 %%% TeX-master: "../pepm2023"
 %%% End:
 
-\subsection{Conditions}
 
-\begin{figure*}
-  \center
-  \renewcommand{\arraystretch}{2}
-  \begin{tabular}{llllll}
-    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)   & $\AtHole$   \\
-    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK)  & $\AtBreak$  \\
-    \scriptsize(POS-TRIVIAL) & $\PosTrivial$ & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
-    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$ &   \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
-    \scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK) & $\NecBreak$
-  \end{tabular}
-  \caption{Condition reduction rules}
-  \label{fig:conditionreductionrules}
-\end{figure*}
-
-The checks for the three modalities are implemented in the functions
-$\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$, and checks the
-current AST under the cursor.
-
-For the $\elm{isEquivalent}$ function the
-\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
-pattern match over the parameters.
-The function applies the rules very straightforwardly such that if one of the
-clauses holds then it returns $\elm{True}$ and if not then it returns
-$\elm{False}$, where the only addition is the usual $\elm{never}$ function
-for a node modifier hole. In rule
-\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
-constants have to be equal or just some constant in order for $\at(\const c)$ to
-hold. We chose that the constants must be equal.
-For all three of the functions, we discard unused parameters of the term
-constructors, such as variable IDs and type annotations.
-
-The $\elm{possibly}$ function is reduced by first checking whether we have the
-trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
-not, we check whether any of the other rules holds, i.e. if we are at an
-application, abstraction or breakpoint, it calls recursively on the children of
-the AST node. It deviates from the rules in that it combine the rules
-\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
-or-operator.
-
-The $\elm{necessarily}$ function is implemented in the same manner as
-$\elm{possible}$, with the only difference being if it is not the trivial case
-and the AST node is an application, then it uses a logical and-operator instead
-of a logical or-operator.
