@@ -257,37 +257,6 @@ constants have to be equal or just some constant in order for $\at(\const c)$ to
 hold. We chose that the constants must be equal.
 For all three of the functions, we discard unused parameters of the term
 constructors, such as variable IDs and type annotations.
-\begin{lstlisting}[language=elm,%
-                   label="eval-aam-isequivalent",%
-                   gobble=0,%
-                   ]
-isEquivalent d a =
-    case ( d, a ) of
-        ( Var _, Ast.Var _ ) ->
-            True
-
-        ( Const c1, Ast.Const c2 ) ->
-            c1 == c2
-
-        ( App _ _, Ast.App _ _ ) ->
-            True
-
-        ( Lambda _ _ _, Ast.Lambda _ _ _ ) ->
-            True
-
-        ( Break, Ast.Break _ ) ->
-            True
-
-        ( Hole _, Ast.Hole _ ) ->
-            True
-
-        ( AamHole n, _ ) ->
-            never n
-
-         _ ->
-             False
-
-\end{lstlisting}
 
 The $\elm{possibly}$ function is reduced by first checking whether we have the
 trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
@@ -296,47 +265,8 @@ application, abstraction or breakpoint, it calls recursively on the children of
 the AST node. It deviates from the rules in that it combine the rules
 \hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
 or-operator.
-\begin{lstlisting}[language=elm,%
-                   label="eval-eed-possibly",%
-                   gobble=4,%
-                   ]
-    possibly d a =
-        (case a of
-            Ast.App a1 a2 ->
-                possibly d a1 || possibly d a2
 
-            Ast.Lambda _ _ a1 ->
-                possibly d a1
-
-            Ast.Break a1 ->
-                possibly d a1
-
-            _ ->
-                False
-        )
-            || Aam.isEquivalent d a
-\end{lstlisting}
-~
 The $\elm{necessarily}$ function is implemented in the same manner as
 $\elm{possible}$, with the only difference being if it is not the trivial case
 and the AST node is an application, then it uses a logical and-operator instead
 of a logical or-operator.
-\begin{lstlisting}[language=elm,%
-                   label="eval-eed-necessarily",%
-                   gobble=0,%
-                   ]
-necessarily d a =
-    (case a of
-        Ast.App a1 a2 ->
-            possibly d a1 && possibly d a2
-        Ast.Lambda _ _ a1 ->
-            possibly d a1
-
-        Ast.Break a1 ->
-            possibly d a1
-
-        _ ->
-            False
-    )
-        || Aam.isEquivalent d a
-\end{lstlisting}
