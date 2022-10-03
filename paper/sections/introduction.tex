@@ -8,39 +8,41 @@ visualization of the program code.
 
 An early example of a structure editor is the Cornell Program Synthesizer
 from 1981 \cornell. It directly edits the ASTs in programs by using a cursor to
-select nodes and allows for insertions and modifications at the cursor. This
-editor was not typed meaning that it allowed ill-typed ASTs to be built.
+select nodes and allows for insertions and modifications at the cursor. 
 
-A later example is Hazelnut from 2017 \hazel. It is a bidirectionally typed
-structure editor on ASTs, where it introduces holes that represent uncompleted
-subtrees. It has dynamic semantics and type consistency of holes are not
-checked until the hole is built to completeness. The result is that for
-uncompleted programs the completed parts can still be evaluated and the holes
-can still be meaningful, even when they are not well-typed.
+A more recent example is Hazel \hazel. This is a structure editor on
+ASTs which introduces holes that represent uncompleted subtrees. The
+language of edit actions in Hazel is described in the Hazelnut editor
+calculus which comes with a reduction semantics and a bidirectional
+type system. The calculus has a dynamic semantics and type consistency
+of holes is not checked until the hole is built to completeness. The
+result is that for uncompleted programs the completed parts can still
+be evaluated and the holes can still be meaningful, even when they are
+not well-typed.
 
-In their 2020 paper Godiksen et al. \pepm~described an editor calculus
-inspired by Hazelnut. The calculus describes the edit actions of a 
-typed structure editor on terms of a simply-typed lambda
-calculus. The calculus allows for partial evaluation of terms by means
-of breakpoints and like Hazelnut, terms can be incomplete in the form
-of holes. However, unlike Hazelnut, the calculus incorporates recursive
-behaviours and a very expressive spatial logic on ASTs. The type
-system of the calculus guarantees that well-typed editor expressions
-will always construct well-typed programs.
+In their 2020 paper Godiksen et al. \pepm~describe an editor calculus
+inspired by Hazelnut. The calculus describes the edit actions of a
+typed structure editor on terms of a simply-typed lambda calculus. The
+calculus allows for partial evaluation of terms by means of
+breakpoints and like Hazelnut, terms can be incomplete in the form of
+holes. However, unlike Hazelnut which only allows for finite edit
+expressions, this calculus incorporates recursive behaviours and a
+very expressive spatial logic on ASTs. The type system of the calculus
+guarantees that well-typed editor expressions will always construct
+well-typed programs.
 
 In this paper we demonstrate that the editor calculus can serve as the
 basis of a structure editor by means of an implementation in
 Elm. This implementation effort involves an implementation of the
 spatial logic as well as the underlying type system.
 
-In order to create editor expressions that are used to traverse and modify the
-ASTs, we introduce an editor expression builder that allows us to
-iteratively build editor expressions.
+Moreover, in order to create editor expressions that are used to
+traverse and modify the ASTs, we introduce an editor expression
+builder that allows us to iteratively build editor expressions.
 
-The main part of the rest of the paper is structured as follows. The syntax, semantics and type
-system of the editor calculus are described in section
-\ref{sec:editorcalculus}. In section \ref{sec:implementing} we outline
-the design of the implementation.
+The syntax, semantics and type system of the editor calculus are
+described in section \ref{sec:editorcalculus}. In section
+\ref{sec:implementing} we outline the design of the implementation.
 
 
 %%% Local Variables:
