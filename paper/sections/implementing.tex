@@ -4,9 +4,9 @@
 The implementation of the editor calculus requires
 
 \begin{itemize}
-\item implementing the semantics of the calculus and allowing for an
-  appropriate visualization of editing
-\item implementing a type checker based on the type system
+  \item implementing the semantics of the calculus and allowing for an
+        appropriate visualization of editing
+  \item implementing a type checker based on the type system
 \end{itemize}
 
 but perhaps surprisingly, it involves finding a way to script editor
@@ -31,8 +31,54 @@ datatype
         | Call Var.Id
         | Nil
 \end{lstlisting}
-
 The rest of the formation rules are defined similarly.
+
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)  & $\AtHole$  \\
+    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK) & $\AtBreak$ \\
+    \scriptsize(POS-TRIVIAL) & $\PosTrivial$                                                                              % & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
+    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$                                      % & \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
+    %\scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK)   & $\NecBreak$
+  \end{tabular}
+  \caption{Selected condition reduction rules}
+  \label{fig:conditionreductionrules}
+\end{figure*}
+
+
+With regards to conditions, the checks for the three modalities are implemented
+in the functions $\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$,
+and checks the current AST under the cursor.
+
+For the $\elm{isEquivalent}$ function the
+\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
+pattern match over the parameters.
+The function applies the rules very straightforwardly such that if one of the
+clauses holds then it returns $\elm{True}$ and if not then it returns
+$\elm{False}$, where the only addition is the usual $\elm{never}$ function
+for a node modifier hole. In rule
+\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
+constants have to be equal or just some constant in order for $\at(\const c)$ to
+hold. We chose that the constants must be equal.
+For all three of the functions, we discard unused parameters of the term
+constructors, such as variable IDs and type annotations.
+
+The $\elm{possibly}$ function is reduced by first checking whether we have the
+trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
+not, we check whether any of the other rules holds, i.e. if we are at an
+application, abstraction or breakpoint, it calls recursively on the children of
+the AST node. It deviates from the rules in that it combine the rules
+\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
+or-operator.
+
+The $\elm{necessarily}$ function is implemented in the same manner as
+$\elm{possible}$, with the only difference being if it is not the trivial case
+and the AST node is an application, then it uses a logical and-operator instead
+of a logical or-operator.
+
 
 \subsection{Abstract syntax trees}
 
@@ -45,13 +91,13 @@ A simple representation would be to represent the AST in a textual form,
 as seen in figure \ref{fig:ast-in-text-form}.
 
 \begin{figure}[H]
-    \Large
-    \begin{equation*}
-      \cursor{(\app{\breakpoint{(\lambda{x}{(\app{x}{x})})}}
+  \Large
+  \begin{equation*}
+    \cursor{(\app{\breakpoint{(\lambda{x}{(\app{x}{x})})}}
       {(\lambda{x}{(\app{x}{x})})})}
-    \end{equation*}
-    \caption{An AST visualized in textual form.}
-    \label{fig:ast-in-text-form}
+  \end{equation*}
+  \caption{An AST visualized in textual form.}
+  \label{fig:ast-in-text-form}
 \end{figure}
 
 The notation used for this representation follows that of Godiksen
@@ -92,14 +138,62 @@ containing some pair for each valid path in $a$.
   \TConfiguration
 \end{equation}
 
-\subsection{Building editor expressions}
+We have implemented the AST type rules in a function that pattern matches on
+the given AST. E.g. for abstractions we follow the rule
+\hyperref[fig:asttyperules]{(T-LAMBDA)} straight forward by judging the type of
+its subtree and then wrapping it in the abstraction type, remembering to add
+the binding to the context.
 
-To build editor expressions, we need to introduce holes to the editor
+\begin{lstlisting}[language=elm,%
+                    gobble=8,%
+                    mathescape,%
+                    ]
+        Lambda x tau a_ ->
+            Maybe.map (TLambda tau) <|
+                typed a_ <| Ctx.bind x tau actx
+\end{lstlisting}
+
+Editor expression type judgments are a bit more involved. Since editor
+expressions get their type information from AST and not themselves, we use Bool
+as return type rather than Maybe as we did for AST rules. We require that the
+editor expression is completed. As we did for AST type judgements, we pattern
+match on a given editor expression and type check on a case by case basis.
+E.g. regarding substitution with abstractions, seen in the rule
+\hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path $p$ is
+valid in the editor type context $\ctx{e}$. Then we find the new context
+$\ctx{e}'$ by adding two new bindings to $\bar{p}$ and check for consistency
+between the bound type and the type of the given expression, and we recursively
+type check the next editor expression $E$ in the new context $\ctx{e}'$.
+\begin{lstlisting}[language=elm,%
+                    gobble=8,%
+                    mathescape,%
+                    ]
+        Pre (Aep.Sub (Aam.Lambda x tau1 tau2)) e ->
+            case Ctx.get p ectx of
+                Just (actx, atyp) -> let ectx_ =
+                  Ctx.bind (Pth.extend p Ast.One)
+                  (Ctx.bind x tau1 actx, tau2) <|
+                    Ctx.bind p
+                    (actx, Ast.TLambda tau1 tau2)
+                      <| restrictBarPath p ectx
+                  in
+                  Ast.isConsistent atyp
+                    (Ast.TLambda tau1 tau2)
+                  && typed p ectx_ e
+                Nothing -> False
+\end{lstlisting}
+
+\subsection{Building editor expressions}
+Editor expressions written in a text field would have to be lexed and parsed.
+This introduces syntax errors to the editor with regards to editor expressions,
+which goes against the spirit of the editor. Hence we created a way to
+build editor expressions in a similar manner to ASTs.
+
+In order to build them, we need to introduce holes to the editor
 expressions. We define a hole term constructor for each type of editor
 expression, as seen in figure \ref{fig:editorexpressionswithholes}
 
 \begin{figure}[H]
-  % \center
   \hspace{-6mm}
     \begin{tabular}{p{3.9cm}p{3.9cm}}
         \begin{lstlisting}[language=elm,%
@@ -112,7 +206,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | AepHole
         \end{lstlisting} &
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -122,7 +216,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | EedHole
         \end{lstlisting} \\
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -132,7 +226,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | EdtHole
         \end{lstlisting} &
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -141,9 +235,9 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                     $\vdots$
                 | AamHole
         \end{lstlisting}
-    \end{tabular}
-    \caption{Editor expression definitions with holes}
-    \label{fig:editorexpressionswithholes}
+  \end{tabular}
+  \caption{Editor expression definitions with holes}
+  \label{fig:editorexpressionswithholes}
 \end{figure}
 
 We are now able to build editor expressions by initializing the editor
@@ -153,24 +247,11 @@ of atomic editor expressions, which are editor expressions with holes as
 children. The user can substitute holes until no holes are left. An editor
 expression without any holes is said to be \textit{completed}.
 
-We are only interested in evaluating completed editor expressions. Therefore, we
-need to know when an editor expression is completed, and only then allow the
-user to evaluate it. To do this, we introduce a type
-variable to each editor expression type. The type variable is used
-for recursively defining the type in terms of the type variable, but also as an
-argument to each hole constructor, as seen in the following listings.
-
-\begin{lstlisting}[language=elm,%
-                   label="aep-definition",%
-                   gobble=4,%
-                   ]
-    type Aep a
-        = Eval
-        | Sub (Aam a)
-        | Child Ast.Child
-        | Parent
-        | AepHole a
-\end{lstlisting}
+We are only interested in evaluating completed editor expressions. To do this,
+we introduce a type variable to each editor expression type. The type variable
+is used for recursively defining the type in terms of the type variable, but
+also as an argument to each hole constructor, as seen in the following
+listing.
 
 \begin{lstlisting}[language=elm,%
                    label="eed-definitions",%
@@ -186,34 +267,6 @@ argument to each hole constructor, as seen in the following listings.
         | EedHole a
 \end{lstlisting}
 
-\begin{lstlisting}[language=elm,%
-                   label="generic-edt-definition",%
-                   gobble=4,%
-                   ]
-    type Edt a
-        = Pre (Aep a) (Edt a)
-        | Bicond (Eed a) (Edt a) (Edt a)
-        | SeqComp (Edt a) (Edt a)
-        | Rec Var.Id (Edt a)
-        | Call Var.Id
-        | Nil
-        | EdtHole a
-\end{lstlisting}
-
-\begin{lstlisting}[language=elm,%
-                   label="aam-definitions",%
-                   gobble=4,%
-                   ]
-    type Aam a
-        = Var Var.Id
-        | Con Const.Value
-        | App ATyp ATyp
-        | Lambda Var.Id ATyp ATyp
-        | Break
-        | Hole ATyp
-        | AamHole a
-\end{lstlisting}
-
 We utilize the \texttt{()} and the \texttt{Never} types to represent
 completed and uncompleted editor expressions. If for example \texttt{a} in
 \texttt{Edt a} is replaced with \texttt{()}, the editor expression can contain
@@ -221,25 +274,12 @@ holes. Conversely, if we replace \texttt{a} with \texttt{Never}, it cannot
 contain holes, since we need a \texttt{Never} value to construct a hole. We can
 therefore use \texttt{Edt ()} to represent uncompleted editor expressions, and
 \texttt{Edt Never} to represent completed editor expressions. We have created a
-type alias for completed and uncompleted editor expressions of every type. For
-example, the following are the type aliases for \texttt{Edt a}.
+type alias for completed and uncompleted editor expressions of every type.
 
-\begin{lstlisting}[language=elm,%
-                   label="completed-and-uncompleted-edts",%
-                   gobble=4,%
-                   ]
-    type alias Uncompleted =
-        Edt ()
-
-    type alias Completed =
-        Edt Never
-\end{lstlisting}
-
-This approach creates stronger guarantees by making impossible states
-impossible. The \texttt{toCompleted} function cannot take an
-\texttt{uncompleted} editor expression, return a \texttt{completed} editor
-expression and still have bugs, since we have constrained the types to create
-type level guarantees.
+This approach creates strong guarantees by making impossible states impossible.
+The \texttt{toCompleted} function cannot take an \texttt{uncompleted} editor
+expression, return a \texttt{completed} editor expression and still have bugs,
+since we have constrained the types to create type level guarantees.
 
 \subsection{The user interface}
 \label{user-interface}
@@ -271,3 +311,5 @@ figure \ref{fig:final_ui}.
 %%% mode: latex
 %%% TeX-master: "../pepm2023"
 %%% End:
+
+
