@@ -3,9 +3,9 @@
 The implementation of the editor calculus requires
 
 \begin{itemize}
-\item implementing the semantics of the calculus and allowing for an
-  appropriate visualization of editing
-\item implementing a type checker based on the type system
+  \item implementing the semantics of the calculus and allowing for an
+        appropriate visualization of editing
+  \item implementing a type checker based on the type system
 \end{itemize}
 
 but perhaps surprisingly, it involves finding a way to script editor
@@ -42,13 +42,13 @@ A simple representation would be to represent the AST in a textual form,
 as seen in figure \ref{fig:ast-in-text-form}.
 
 \begin{figure}[H]
-    \Large
-    \begin{equation*}
-      \cursor{(\app{\breakpoint{(\lambda{x}{(\app{x}{x})})}}
+  \Large
+  \begin{equation*}
+    \cursor{(\app{\breakpoint{(\lambda{x}{(\app{x}{x})})}}
       {(\lambda{x}{(\app{x}{x})})})}
-    \end{equation*}
-    \caption{An AST visualized in textual form.}
-    \label{fig:ast-in-text-form}
+  \end{equation*}
+  \caption{An AST visualized in textual form.}
+  \label{fig:ast-in-text-form}
 \end{figure}
 
 The notation used for this representation follows that of Godiksen
@@ -92,18 +92,18 @@ containing some pair for each valid path in $a$.
 \subsection{Building editor expressions}
 Editor expressions written in a text field would have to be lexed and parsed.
 This introduces syntax errors to the editor with regards to editor expressions,
-which goes against the spirit of the editor. Hence we created an builder to
+which goes against the spirit of the editor. Hence we created a way to
 build editor expressions in a similar manner to ASTs.
 
-To build editor expressions, we need to introduce holes to the editor
+In order to build them, we need to introduce holes to the editor
 expressions. We define a hole term constructor for each type of editor
 expression, as seen in figure \ref{fig:editorexpressionswithholes}
 
 \begin{figure}[H]
-    \center
-    \begin{tabular}{llll}
+  \center
+  \begin{tabular}{llll}
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -111,9 +111,9 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 = Eval
                     $\vdots$
                 | AepHole
-        \end{lstlisting} &
+        \end{lstlisting}  &
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -123,7 +123,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | EedHole
         \end{lstlisting} \\
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -133,7 +133,7 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                 | EdtHole
         \end{lstlisting} &
 
-        \begin{lstlisting}[language=elm,%
+    \begin{lstlisting}[language=elm,%
                             gobble=8,%
                             mathescape,%
                             ]
@@ -142,9 +142,9 @@ expression, as seen in figure \ref{fig:editorexpressionswithholes}
                     $\vdots$
                 | AamHole
         \end{lstlisting}
-    \end{tabular}
-    \caption{Editor expression definitions with holes}
-    \label{fig:editorexpressionswithholes}
+  \end{tabular}
+  \caption{Editor expression definitions with holes}
+  \label{fig:editorexpressionswithholes}
 \end{figure}
 
 We are now able to build editor expressions by initializing the editor
