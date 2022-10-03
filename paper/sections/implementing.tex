@@ -230,20 +230,24 @@ figure \ref{fig:final_ui}.
 %%% End:
 
 \subsection{Conditions}
+
+\begin{figure*}
+  \center
+  \renewcommand{\arraystretch}{2}
+  \begin{tabular}{llllll}
+    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)   & $\AtHole$   \\
+    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK)  & $\AtBreak$  \\
+    \scriptsize(POS-TRIVIAL) & $\PosTrivial$ & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
+    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$ &   \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
+    \scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK) & $\NecBreak$
+  \end{tabular}
+  \caption{Condition reduction rules}
+  \label{fig:conditionreductionrules}
+\end{figure*}
+
 The checks for the three modalities are implemented in the functions
-$\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$, respectively,
-and checks the current AST under the cursor.
-%\begin{lstlisting}[language=elm,%
-%                   label="eval-eed-signature",%
-%                   gobble=0,%
-%                   ]
-%Aam.Completed -> Ast -> Bool
-%\end{lstlisting}
-%The node modifier is completed, but the AST is not well-formed since it
-%is the AST under the cursor from the last function. Hence we only expose
-%$\elm{eval}$ and none of the other functions, such that we still can only
-%evaluate completed editor expressions and well-formed ASTs with a type-level
-%guarantee from Elm. \\
+$\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$, and checks the
+current AST under the cursor.
 
 For the $\elm{isEquivalent}$ function the
 \hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
