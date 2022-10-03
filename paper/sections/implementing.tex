@@ -90,6 +90,10 @@ containing some pair for each valid path in $a$.
 \end{equation}
 
 \subsection{Building editor expressions}
+Editor expressions written in a text field would have to be lexed and parsed.
+This introduces syntax errors to the editor with regards to editor expressions,
+which goes against the spirit of the editor. Hence we created an builder to
+build editor expressions in a similar manner to ASTs.
 
 To build editor expressions, we need to introduce holes to the editor
 expressions. We define a hole term constructor for each type of editor
@@ -150,24 +154,11 @@ of atomic editor expressions, which are editor expressions with holes as
 children. The user can substitute holes until no holes are left. An editor
 expression without any holes is said to be \textit{completed}.
 
-We are only interested in evaluating completed editor expressions. Therefore, we
-need to know when an editor expression is completed, and only then allow the
-user to evaluate it. To do this, we introduce a type
-variable to each editor expression type. The type variable is used
-for recursively defining the type in terms of the type variable, but also as an
-argument to each hole constructor, as seen in the following listings.
-
-\begin{lstlisting}[language=elm,%
-                   label="aep-definition",%
-                   gobble=4,%
-                   ]
-    type Aep a
-        = Eval
-        | Sub (Aam a)
-        | Child Ast.Child
-        | Parent
-        | AepHole a
-\end{lstlisting}
+We are only interested in evaluating completed editor expressions. To do this,
+we introduce a type variable to each editor expression type. The type variable
+is used for recursively defining the type in terms of the type variable, but
+also as an argument to each hole constructor, as seen in the following
+listing.
 
 \begin{lstlisting}[language=elm,%
                    label="eed-definitions",%
@@ -183,34 +174,6 @@ argument to each hole constructor, as seen in the following listings.
         | EedHole a
 \end{lstlisting}
 
-\begin{lstlisting}[language=elm,%
-                   label="generic-edt-definition",%
-                   gobble=4,%
-                   ]
-    type Edt a
-        = Pre (Aep a) (Edt a)
-        | Bicond (Eed a) (Edt a) (Edt a)
-        | SeqComp (Edt a) (Edt a)
-        | Rec Var.Id (Edt a)
-        | Call Var.Id
-        | Nil
-        | EdtHole a
-\end{lstlisting}
-
-\begin{lstlisting}[language=elm,%
-                   label="aam-definitions",%
-                   gobble=4,%
-                   ]
-    type Aam a
-        = Var Var.Id
-        | Con Const.Value
-        | App ATyp ATyp
-        | Lambda Var.Id ATyp ATyp
-        | Break
-        | Hole ATyp
-        | AamHole a
-\end{lstlisting}
-
 We utilize the \texttt{()} and the \texttt{Never} types to represent
 completed and uncompleted editor expressions. If for example \texttt{a} in
 \texttt{Edt a} is replaced with \texttt{()}, the editor expression can contain
@@ -218,25 +181,12 @@ holes. Conversely, if we replace \texttt{a} with \texttt{Never}, it cannot
 contain holes, since we need a \texttt{Never} value to construct a hole. We can
 therefore use \texttt{Edt ()} to represent uncompleted editor expressions, and
 \texttt{Edt Never} to represent completed editor expressions. We have created a
-type alias for completed and uncompleted editor expressions of every type. For
-example, the following are the type aliases for \texttt{Edt a}.
+type alias for completed and uncompleted editor expressions of every type.
 
-\begin{lstlisting}[language=elm,%
-                   label="completed-and-uncompleted-edts",%
-                   gobble=4,%
-                   ]
-    type alias Uncompleted =
-        Edt ()
-
-    type alias Completed =
-        Edt Never
-\end{lstlisting}
-
-This approach creates stronger guarantees by making impossible states
-impossible. The \texttt{toCompleted} function cannot take an
-\texttt{uncompleted} editor expression, return a \texttt{completed} editor
-expression and still have bugs, since we have constrained the types to create
-type level guarantees.
+This approach creates strong guarantees by making impossible states impossible.
+The \texttt{toCompleted} function cannot take an \texttt{uncompleted} editor
+expression, return a \texttt{completed} editor expression and still have bugs,
+since we have constrained the types to create type level guarantees.
 
 \subsection{The user interface}
 \label{user-interface}
