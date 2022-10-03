@@ -278,3 +278,115 @@ figure \ref{fig:final_ui}.
 %%% mode: latex
 %%% TeX-master: "../pepm2023"
 %%% End:
+
+\subsection{Conditions}
+
+The three functions $\elm{isEquivalent}$, $\elm{possibly}$ and
+$\elm{necessarily}$ all have the signature
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed-signature",%
+                   gobble=0,%
+                   ]
+Aam.Completed -> Ast -> Bool
+\end{lstlisting}
+The node modifier is completed, but the AST is not well-formed since it
+is the AST under the cursor from the last function. Hence we only expose
+$\elm{eval}$ and none of the other functions, such that we still can only
+evaluate completed editor expressions and well-formed ASTs with a type-level
+guarantee from Elm. \\
+
+For the $\elm{isEquivalent}$ function the
+\hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
+pattern match over the parameters.
+The function applies the rules very straightforwardly such that if one of the
+clauses holds then it returns $\elm{True}$ and if not then it returns
+$\elm{False}$, where the only addition is the usual $\elm{never}$ function
+for a node modifier hole. In rule
+\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
+constants have to be equal or just some constant in order for $\at(\const c)$ to
+hold. We chose that the constants must be equal.
+For all three of the functions, we discard unused parameters of the term
+constructors, such as variable IDs and type annotations.
+\begin{lstlisting}[language=elm,%
+                   label="eval-aam-isequivalent",%
+                   gobble=0,%
+                   ]
+isEquivalent d a =
+    case ( d, a ) of
+        ( Var _, Ast.Var _ ) ->
+            True
+
+        ( Const c1, Ast.Const c2 ) ->
+            c1 == c2
+
+        ( App _ _, Ast.App _ _ ) ->
+            True
+
+        ( Lambda _ _ _, Ast.Lambda _ _ _ ) ->
+            True
+
+        ( Break, Ast.Break _ ) ->
+            True
+
+        ( Hole _, Ast.Hole _ ) ->
+            True
+
+        ( AamHole n, _ ) ->
+            never n
+
+         _ ->
+             False
+
+\end{lstlisting}
+
+The $\elm{possibly}$ function is reduced by first checking whether we have the
+trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
+not, we check whether any of the other rules holds, i.e. if we are at an
+application, abstraction or breakpoint, it calls recursively on the children of
+the AST node. It deviates from the rules in that it combine the rules
+\hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
+or-operator.
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed-possibly",%
+                   gobble=4,%
+                   ]
+    possibly d a =
+        (case a of
+            Ast.App a1 a2 ->
+                possibly d a1 || possibly d a2
+
+            Ast.Lambda _ _ a1 ->
+                possibly d a1
+
+            Ast.Break a1 ->
+                possibly d a1
+
+            _ ->
+                False
+        )
+            || Aam.isEquivalent d a
+\end{lstlisting}
+~
+The $\elm{necessarily}$ function is implemented in the same manner as
+$\elm{possible}$, with the only difference being if it is not the trivial case
+and the AST node is an application, then it uses a logical and-operator instead
+of a logical or-operator.
+\begin{lstlisting}[language=elm,%
+                   label="eval-eed-necessarily",%
+                   gobble=0,%
+                   ]
+necessarily d a =
+    (case a of
+        Ast.App a1 a2 ->
+            possibly d a1 && possibly d a2
+        Ast.Lambda _ _ a1 ->
+            possibly d a1
+
+        Ast.Break a1 ->
+            possibly d a1
+
+        _ ->
+            False
+    )
+        || Aam.isEquivalent d a
+\end{lstlisting}
