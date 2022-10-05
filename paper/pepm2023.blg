@@ -11,49 +11,50 @@ Reallocated global_strs (elt_size=20001) to 20 items from 10.
 Reallocated glb_str_end (elt_size=4) to 20 items from 10.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
 Warning--numpages field, but no articleno or eid field, in 10.1145/3441296.3441393
-Warning--empty publisher in conf/popl/Hazelnut17
+Warning--empty publisher in ifl2022
+Warning--empty address in ifl2022
+Warning--empty address in DBLP:conf/synasc/KjaerLMH21
 Warning--empty address in conf/popl/Hazelnut17
-Warning--page numbers missing in both pages and numpages fields in conf/popl/Hazelnut17
 Warning--numpages field, but no articleno or eid field, in 10.1145/358746.358755
-You've used 3 entries,
+You've used 5 entries,
             5732 wiz_defined-function locations,
-            1318 strings with 15334 characters,
-and the built_in function-call counts, 3989 in all, are:
-= -- 462
-> -- 164
+            1340 strings with 16278 characters,
+and the built_in function-call counts, 6999 in all, are:
+= -- 778
+> -- 301
 < -- 0
-+ -- 59
-- -- 56
-* -- 294
-:= -- 403
-add.period$ -- 14
-call.type$ -- 3
-change.case$ -- 24
-chr.to.int$ -- 3
-cite$ -- 8
-duplicate$ -- 347
-empty$ -- 229
-format.name$ -- 68
-if$ -- 931
++ -- 107
+- -- 98
+* -- 540
+:= -- 721
+add.period$ -- 25
+call.type$ -- 5
+change.case$ -- 41
+chr.to.int$ -- 5
+cite$ -- 11
+duplicate$ -- 613
+empty$ -- 411
+format.name$ -- 118
+if$ -- 1622
 int.to.chr$ -- 2
 int.to.str$ -- 1
-missing$ -- 14
-newline$ -- 70
-num.names$ -- 24
-pop$ -- 130
+missing$ -- 24
+newline$ -- 90
+num.names$ -- 44
+pop$ -- 225
 preamble$ -- 1
-purify$ -- 51
+purify$ -- 86
 quote$ -- 0
-skip$ -- 140
+skip$ -- 241
 stack$ -- 0
-substring$ -- 244
-swap$ -- 49
+substring$ -- 486
+swap$ -- 83
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 76
-warning$ -- 5
-while$ -- 18
+type$ -- 136
+warning$ -- 6
+while$ -- 36
 width$ -- 0
-write$ -- 99
-(There were 5 warnings)
+write$ -- 142
+(There were 6 warnings)

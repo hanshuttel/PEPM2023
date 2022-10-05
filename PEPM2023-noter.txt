@@ -1,0 +1,30 @@
+Er gjort af Hans:
+
+- Abstract er skrevet helt om, så bidragene kommer tydeligere frem.
+- Jeg flyttede D fra afsnit 2 ned i afsnit 3
+- Forklare alpha i afsnit 3.2 om semantik
+
+
+UDESTÅENDE:
+
+(NTT)
+
+- Mere om hvordan semantikken er implementeret (hvad hedder funktionen?)
+- Pænere afrunding af afsnit 4.2
+
+Mere i konklusionen: (Hans)
+
+- Mulige udvidelser af kalkylen – hvor nemt er det? (Navngivne huller) Sælg det på at det er nemt at udvide!
+- Der er simpel undo/redo - nævn det! (og henvis til SYNASC2021-artiklen)
+
+Derudover: (NTT)
+
+- Slette implementationsdetaljer for conditions
+- Never dukker tidligt op (s. 3, spalte 1)
+- Om Maybe-typer i AST-typesystemet
+
+Litteraturlisten (Hans):
+
+- DOI på litteraturlisten (slå op på DBLP)
+- Tilføj SYNASC2021-artiklen i litteraturlisten
+- IFL2022-artikel i litteraturlisten
