@@ -3,14 +3,14 @@
 The program terms that editor expression terms can build and modify
 are terms of a simply typed $\lambda$-calculus extended with
 breakpoints and holes. The formation rules are
-
+%
 \begin{align}
-  D & ::= \var{x}
-  \mid \const{c}
-  \mid \bind{\aamApp}{\tau_1\to\tau_2,\tau_1}  \\ \label{eq:lan-mod-aam}
-&  \mid \bind{\aamLambda{x}}{\tau_1\to\tau_2} 
-  \mid \aamBreak
-  \mid \bind{\aamHole}{\tau} \\ 
+ %  D & ::= \var{x}
+%   \mid \const{c}
+%   \mid \bind{\aamApp}{\tau_1\to\tau_2,\tau_1}  \\ \label{eq:lan-mod-aam}
+% &  \mid \bind{\aamLambda{x}}{\tau_1\to\tau_2} 
+%   \mid \aamBreak
+%   \mid \bind{\aamHole}{\tau} \\ 
   a & ::= x
   \mid c
   \mid \app{a_1}{a_2}
@@ -19,14 +19,7 @@ breakpoints and holes. The formation rules are
   \mid \breakpoint{a}
   \mid \bind{\hole}{\tau} \label{eq:lan-mod-ast}
 \end{align}
-
-Terms are extended with constructs that describe how the editor can
-inspect and modify programs. The new constructs are
-$\bind{\aamHole}{\tau}$ which denotes a hole annotated with type
-$\tau$, $\cursor{a}$ which denotes an expression that is directly
-underneath the cursor and $\breakpoint{a}$, which is a breakpoint --
-meaning that this occurrence of $a$ is left unevaluated.
-
+%
 We use a big-step reduction semantics of our $\lambda$-calculus with
 reductions of the form $a \to v$; it
 will be used for defining the behaviour of the \eval primitive in the
@@ -50,8 +43,8 @@ Types $\tau$ are given by the formation rules
 where $b$ ranges over a set of base types.
 
 Type judgements are of the form $\Gamma_a \vdash a : \tau$, where
-$\Gamma_a$ is a type context. The type rules are given in Figure
-\ref{fig:asttyperules}.
+$\Gamma_a$ is a type context that maps variables to types. The type
+rules are given in Figure \ref{fig:asttyperules}.
 
 \begin{figure*}
   \center
