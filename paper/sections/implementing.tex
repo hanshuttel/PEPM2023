@@ -2,19 +2,19 @@
 \label{sec:implementing}
 
 The implementation of the editor calculus requires
-
+%
 \begin{itemize}
   \item implementing the semantics of the calculus and allowing for an
         appropriate visualization of editing
   \item implementing a type checker based on the type system
 \end{itemize}
-
-but perhaps surprisingly, it involves finding a way to script editor
+%
+Perhaps surprisingly, it also involves finding a way to script editor
 calculus expressions. In this section we outline this.
 
 \subsection{Implementing the editor calculus semantics}
 
-We model the formation rules of the editor calculus by a collection of
+We model the formation rules of the editor calculus in Elm as a collection of
 algebraic datatypes. As an example, expressions are given by the
 datatype
 
@@ -48,11 +48,14 @@ The rest of the formation rules are defined similarly.
   \label{fig:conditionreductionrules}
 \end{figure*}
 
-The transition relation is implemented using a function that computes transitions.
+The transition relation is implemented using a function that computes
+transitions. \textcolor{red}{HVAD HEDDER DEN?}
 
-With regards to conditions, the checks for the three modalities are implemented
-in the functions $\elm{isEquivalent}$, $\elm{possibly}$ and $\elm{necessarily}$,
-and checks the current AST under the cursor.
+The implementation of checking if conditions in the spatial logic are
+satisfied requires special attention. The checks for the three
+modalities are implemented in the functions $\elm{isEquivalent}$,
+$\elm{possibly}$ and $\elm{necessarily}$, and checks the current AST
+under the cursor.
 
 For the $\elm{isEquivalent}$ function the
 \hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
@@ -60,8 +63,8 @@ pattern match over the parameters.
 The function applies the rules very straightforwardly such that if one of the
 clauses holds then it returns $\elm{True}$ and if not then it returns
 $\elm{False}$, where the only addition is the usual $\elm{never}$ function
-for a node modifier hole. In rule
-\hyperref[fig:conditionreductionrules]{(AT-CONST)} it is not clear whether the
+for a node modifier hole. From the rule
+\hyperref[fig:conditionreductionrules]{(AT-CONST)} it was not clear whether the
 constants have to be equal or just some constant in order for $\at(\const c)$ to
 hold. We chose that the constants must be equal.
 For all three of the functions, we discard unused parameters of the term
@@ -81,14 +84,15 @@ and the AST node is an application, then it uses a logical and-operator instead
 of a logical or-operator.
 
 
-\subsection{Abstract syntax trees}
+\subsection{Showing abstract syntax trees}
 
-We are interested in visualizing the AST to make the editor intuitive
-for a user.  We are not necessarily interested in finding the ``best''
-visualization, nor in implementing a vast number of different
-representations.
+Our editor visualizes abstract syntax trees in order to make
+structural editing intuitive for a user.  We are not necessarily
+interested in finding a ``best'' visualization, nor in implementing a
+vast number of different representations. The current version allows
+for two distinct visualizations.
 
-A simple representation would be to represent the AST in a textual form,
+A simple representation is to represent the AST in a textual form,
 as seen in figure \ref{fig:ast-in-text-form}.
 
 \begin{figure}[H]
@@ -126,24 +130,26 @@ Switching between the two visualizations is immediate in the user interface.
 
 \subsection{Implementing a type checker}
 
-We type check with respect to a
-configuration. We say that a configuration is well-typed iff; the AST is both
-well-formed and well-typed in the empty AST context and the editor expression
+Our editor typechecks configurations $\breakpoint{E,a}$. We say that
+$\breakpoint{E,a}$ is well-typed iff both the AST $a$ is
+well-formed and well-typed in the empty AST context and the editor
+expression $E$
 is both well-formed and well-typed for the path to the cursor in the AST and
-the editor context containing all valid paths in the AST \pepm. I.e. equation
+the editor context containing all valid paths in the AST \pepm. This
+is captured by the type rule
 (\ref{eq:welltypedconf}) where $\emptyset$ is the empty AST context, $p$ is the
 path from the root to the cursor in $a$, and $\ctx{e}$ is the editor context
 containing some pair for each valid path in $a$.
-
+%
 \begin{equation}\label{eq:welltypedconf}
   \TConfiguration
 \end{equation}
-
-We have implemented the AST type rules in a function that pattern matches on
-the given AST. E.g. for abstractions we follow the rule
-\hyperref[fig:asttyperules]{(T-LAMBDA)} straight forward by judging the type of
-its subtree and then wrapping it in the abstraction type, remembering to add
-the binding to the context.
+%
+We have implemented the AST type rules using a function that pattern
+matches on the given AST. E.g. for abstractions we follow the rule
+\hyperref[fig:asttyperules]{(T-LAMBDA)} straight forward by judging
+the type of its subtree and then wrapping it in the abstraction type,
+remembering to add the binding to the context.
 
 \begin{lstlisting}[language=elm,%
                     gobble=8,%
@@ -154,17 +160,19 @@ the binding to the context.
                 typed a_ <| Ctx.bind x tau actx
 \end{lstlisting}
 
-Editor expression type judgments are a bit more involved. Since editor
-expressions get their type information from AST and not themselves, we use Bool
-as return type rather than Maybe as we did for AST rules. We require that the
-editor expression is completed. As we did for AST type judgements, we pattern
-match on a given editor expression and type check on a case by case basis.
-E.g. regarding substitution with abstractions, seen in the rule
-\hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path $p$ is
-valid in the editor type context $\ctx{e}$. Then we find the new context
-$\ctx{e}'$ by adding two new bindings to $\bar{p}$ and check for consistency
-between the bound type and the type of the given expression, and we recursively
-type check the next editor expression $E$ in the new context $\ctx{e}'$.
+Editor expression type judgements are a bit more involved. Since
+editor expressions get their type information from AST and not
+themselves, we use Bool as return type rather than Maybe as we did for
+AST rules. We require that the editor expression is completed. As we
+did for AST type judgements, we pattern match on a given editor
+expression and type check on a case by case basis.  E.g. regarding
+substitution with abstractions, seen in the rule
+\hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path
+$p$ is valid in the editor type context $\ctx{e}$. Then we find the
+new context $\ctx{e}'$ by adding two new bindings to $\bar{p}$ and
+check for consistency between the bound type and the type of the given
+expression, and we recursively type check the next editor expression
+$E$ in the new context $\ctx{e}'$.
 \begin{lstlisting}[language=elm,%
                     gobble=8,%
                     mathescape,%

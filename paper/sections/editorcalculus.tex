@@ -41,13 +41,13 @@ $\tau$, $\cursor{a}$ which denotes an expression that is directly
 underneath the cursor and $\breakpoint{a}$, which is a breakpoint --
 meaning that this occurrence of $a$ is left unevaluated.
 
-Moreover,
-conditional expressions \bicond{\phi}{E_1}{E_2} will proceed as $E_1$
+A conditional expression \bicond{\phi}{E_1}{E_2} will proceed as $E_1$
 if the condition $\phi$ holds for the current subtree and as $E_2$
 otherwise. We allow for recursive expressions \rec{x}{E} where $x$
 ranges over recursion variables (we only consider expressions where
-every $x$ is bound by some \rec{x}{E}) and sequential composition
-\seqcomp{E_1}{E_2}.
+every $x$ is bound by some \rec{x}{E}). Sequential composition
+\seqcomp{E_1}{E_2} executes $E_1$ and, when this terminates, $E_2$ is
+then execued.
 
 Conditions $\phi$ are conditions from a spatial logic on ASTs that contains
 the usual propositional connectives as well as the modalities
@@ -77,8 +77,8 @@ Finally, the $\eval$ primitive allows us to evaluate the entire AST
 The semantics of the editor calculus is given by a labelled transition system
 $(S_E, \mathcal{L}_E, \to)$, where $S_E = \edt \times \AST$ and $\mathcal{L}_E
 = \val \cup \aep \cup \{\epsilon\}$ and where transitions take the form
-$\breakpoint{E, a} \transition{$\alpha$} \breakpoint{E', a'}$ with $a$ being
-well-formed, $E$ being completed and $\alpha \in \mathcal{L}_E$. 
+$\breakpoint{E, a} \transition{$\alpha$} \breakpoint{E', a'}$ where
+$\alpha \in \mathcal{L}_E$ is an edit action or a value.
 
 Editor expressions are always reduced in configurations of the form
 $\breakpoint{E,a}$, where $E$ is the given editor expression and $a$ is the
@@ -94,20 +94,20 @@ $E_1$ or $E_2$ as editor expression for the next reduction increment, based on
 whether or not $\phi$ holds for the AST in the configuration. Hence it just
 returns $\epsilon$.
 
-\subsection{A type system}
+\subsection{A type system for editor expressions}
 
-The type rules guarantee that well-typed editor expressions can only
-build well-typed programs. In order to achieve this, type judgements
-are relative to a path $p$ in the tree and a context $\Gamma_e$
-that for any given $p_1$ gives us a pair $(\Gamma_a,\tau)$ where
-$\Gamma_a$ is a type environment such that $dom(\Gamma_a)$ is the set
-of free program variables known at the end of the path $p_1$ and
-$\tau$ is the type of the subtree located at the end of the path.
+The type system should guarantee that well-typed editor expressions
+can only build well-typed programs. In order to achieve this, type
+judgements are of the form
+%
+\[ p,\Gamma_e \vdash E : ok \]
+%
+Here $p$ is a tree path $\Gamma_e$ is a type context that for any
+given path $p_1$ gives us a pair $(\Gamma_a,\tau)$
+where $\Gamma_a$ is a type environment such that $dom(\Gamma_a)$ is
+the set of free program variables known at the end of the path $p_1$
+and $\tau$ is the type of the subtree located at the end of the path.
 
-Type judgements are of the form
-%
-\[ p,\Gamma_3 \vdash E : ok \]
-%
 Figure \ref{fig:edttyperules} shows a selection of the type rules.
 
 \begin{figure*}
