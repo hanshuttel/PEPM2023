@@ -90,10 +90,17 @@
 
 %
  \begin{abstract}
-We outline an implementation in Elm of a type-safe calculus that
-describes syntax-directed editing of functional programs. The
-resulting system provides a syntax-directed editor for functional
-programs. 
+   Syntax-directed editors provide an alternative to text-based
+   editors. This paper describes the implementation in Elm of a
+   type-safe calculus for construction, editing and visualizing
+   functional programs. The type system guarantees that only
+   well-typed programs can be built. The implementation lets the
+   programmer build edit expressions using a specialized editor and
+   allows for the evaluation of incomplete programs. A type checker
+   for the editor calculus guarantees that only well-typed edit
+   expressions can be built, and a program visualizer allows the
+   programmer to choose between different visualizations of code and
+   how it is edited and evaluated.
 \end{abstract}
 
 \begin{CCSXML}
