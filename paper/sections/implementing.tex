@@ -59,14 +59,12 @@ under the cursor.
 
 For the $\elm{isEquivalent}$ function the
 \hyperref[fig:conditionreductionrules]{(AT-...)} rules are implemented by a
-pattern match over the parameters.
-The function applies the rules very straightforwardly such that if one of the
-clauses holds then it returns $\elm{True}$ and if not then it returns
-$\elm{False}$, where the only addition is the usual $\elm{never}$ function
-for a node modifier hole. From the rule
+pattern match over the parameters. The function applies the rules very
+straightforwardly such that if one of the clauses holds then it returns
+$\elm{True}$ and if not then it returns $\elm{False}$. From the rule
 \hyperref[fig:conditionreductionrules]{(AT-CONST)} it was not clear whether the
-constants have to be equal or just some constant in order for $\at(\const c)$ to
-hold. We chose that the constants must be equal.
+constants have to be equal or just some constant in order for $\at(\const c)$
+to hold. We chose that the constants must be equal.
 
 The $\elm{possibly}$ function is reduced by first checking whether we have the
 trivial case \hyperref[fig:conditionreductionrules]{(POS-TRIVIAL)}. If we do
@@ -128,7 +126,7 @@ Switching between the two visualizations is immediate in the user interface.
 
 \subsection{Implementing a type checker}
 
-Our editor typechecks configurations $\breakpoint{E,a}$. We say that
+Our editor type checks configurations $\breakpoint{E,a}$. We say that
 $\breakpoint{E,a}$ is well-typed iff both the AST $a$ is
 well-formed and well-typed in the empty AST context and the editor
 expression $E$
@@ -143,10 +141,14 @@ containing some pair for each valid path in $a$.
   \TConfiguration
 \end{equation}
 %
-We have implemented the AST type rules using a function that pattern
-matches on the given AST. E.g. for abstractions we follow the rule
-\hyperref[fig:asttyperules]{(T-LAMBDA)} straightforwardly by judging
-the type of its subtree and then wrapping it in the abstraction type,
+We have implemented the AST type rules using a function that recursively
+pattern match each node of the given AST top-down. In the AST type rules we
+judge a non-leaf AST node relative to the type of its children. In order to
+model this relation, we use the \elm{Maybe}-type in the return type of the
+function such that \elm{Nothing} represents an ill-typed AST and \elm{Just
+$\tau$} represents a well-typed AST with type $\tau$. E.g. for abstractions we
+follow the rule \hyperref[fig:asttyperules]{(T-LAMBDA)} straightforwardly by
+judging the type of its subtree and then wrapping it in the abstraction type,
 remembering to add the binding to the context.
 
 \begin{lstlisting}[language=elm,%
@@ -165,29 +167,33 @@ AST rules. We require that the editor expression is completed. As we
 did for AST type judgements, we pattern match on a given editor
 expression and type check on a case by case basis.  E.g. regarding
 substitution with abstractions, seen in the rule
-\hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path
-$p$ is valid in the editor type context $\ctx{e}$. Then we find the
-new context $\ctx{e}'$ by adding two new bindings to $\bar{p}$ and
-check for consistency between the bound type and the type of the given
-expression, and we recursively type check the next editor expression
-$E$ in the new context $\ctx{e}'$.
+\hyperref[fig:edttyperules]{(T-SUB-ABS)}, we first check if the path $p$ is
+valid in the editor type context $\ctx{e}$ and check for type consistency
+between the bound type at path $p$ and the type of the given expression to be
+substituted. Then we find the new context $\ctx{e}'$ by adding two new bindings
+to the editor context found by restricting $\ctx{e}$ to only include bindings
+in $\bar{p}$. Penultimately we check for type consistency between the bound
+type at path $p$ and the type of the given expression to be substituted. Lastly
+we recursively type check the next editor expression $E$ in the context
+$\ctx{e}'$.
 \begin{lstlisting}[language=elm,%
                     gobble=8,%
                     mathescape,%
                     ]
-        Pre (Aep.Sub (Aam.Lambda x tau1 tau2)) e ->
+        Pre (Aep.Sub
+                 (Aam.Lambda x tau1 tau2)) e ->
             case Ctx.get p ectx of
-                Just (actx, atyp) -> let ectx_ =
-                  Ctx.bind (Pth.extend p Ast.One)
-                  (Ctx.bind x tau1 actx, tau2) <|
-                    Ctx.bind p
-                    (actx, Ast.TLambda tau1 tau2)
-                      <| restrictBarPath p ectx
-                  in
-                  Ast.isConsistent atyp
-                    (Ast.TLambda tau1 tau2)
-                  && typed p ectx_ e
-                Nothing -> False
+               Just (actx, atyp) -> let ectx_ =
+                 Ctx.bind (Pth.extend p Ast.One)
+                 (Ctx.bind x tau1 actx, tau2) <|
+                   Ctx.bind p
+                   (actx, Ast.TLambda tau1 tau2)
+                     <| restrictBarPath p ectx
+                 in
+                 Ast.isConsistent atyp
+                   (Ast.TLambda tau1 tau2)
+                 && typed p ectx_ e
+               Nothing -> False
 \end{lstlisting}
 
 \subsection{Building editor expressions}
