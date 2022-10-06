@@ -106,9 +106,14 @@ et al.~\pepm. It is straightforward but can also be
 difficult to reason about, especially as the AST grows large.
 
 We also implement another representation, namely as a tree as seen in
-figure \ref{fig:ast_visual_tree}.
+figure \ref{fig:ast_visual_tree} where each construct is represented as a node.
 
 Switching between the two visualizations is immediate in the user interface.
+
+Each representation has a term in the $\elm{Representation}$ type and has a
+function that computes the view. Thus, extending the editor with additional
+representations is possible by extending the $\elm{Representation}$ type and
+implementing a new visualization function.
 
 \begin{figure*}
   \center
