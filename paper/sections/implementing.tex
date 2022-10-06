@@ -302,14 +302,13 @@ since we have constrained the types to create type level guarantees.
 \subsection{The user interface}
 \label{user-interface}
 
-The user interface allows for two different visualizations of
-programs: a textual representation and a tree representation. The
-implementation of the textual representation is simple: A conversion
-of the AST data structure to HTML with syntax highlighting. The last
-image in figure \ref{fig:final_ui} shows this.
+The user interface allows for two different visualizations of programs: a
+textual representation and a tree representation. The implementation of the
+textual representation is simple: A conversion of the AST data structure to
+HTML, as in Figure \ref{fig:ast-in-text-form}, but with syntax highlighting.
 
 The implementation of the tree representation is more involved. Figure
-\ref{fig:ast_visual_tree} shows an example of this.
+\ref{fig:final_ui} shows an example of this.
 
 The visualization of the editor expression builder is similar to the textual
 representation of ASTs. We implemented a function that given an \texttt{Edt}
