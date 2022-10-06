@@ -142,7 +142,7 @@ containing some pair for each valid path in $a$.
 \end{equation}
 %
 We have implemented the AST type rules using a function that recursively
-pattern match each node of the given AST top-down. In the AST type rules we
+pattern matches each node of the given AST top-down. In the AST type rules we
 judge a non-leaf AST node relative to the type of its children. In order to
 model this relation, we use the \elm{Maybe}-type in the return type of the
 function such that \elm{Nothing} represents an ill-typed AST and \elm{Just
@@ -300,11 +300,11 @@ since we have constrained the types to create type level guarantees.
 The user interface allows for two different visualizations of
 programs: a textual representation and a tree representation. The
 implementation of the textual representation is simple: A conversion
-of the AST data structure to HTML with syntax highlighting . The last
+of the AST data structure to HTML with syntax highlighting. The last
 image in figure \ref{fig:final_ui} shows this.
 
 The implementation of the tree representation is more involved. Figure
-\ref{fig:ast_visual_tree} shows an example of this
+\ref{fig:ast_visual_tree} shows an example of this.
 
 The visualization of the editor expression builder is similar to the textual
 representation of ASTs. We implemented a function that given an \texttt{Edt}
