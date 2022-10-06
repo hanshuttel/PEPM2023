@@ -74,11 +74,9 @@ the AST node. It deviates from the rules in that it combine the rules
 \hyperref[fig:conditionreductionrules]{(POS-APP-1) and (POS-APP-2)} by a logical
 or-operator.
 
-The $\elm{necessarily}$ function is implemented in the same manner as
-$\elm{possible}$, with the only difference being if it is not the trivial case
-and the AST node is an application, then it uses a logical and-operator instead
-of a logical or-operator.
-
+Finally, we have added a notion of history not present in the
+semantics of \cite{10.1145/3441296.3441393} that allows the programmer
+to undo and redo individual edit actions. 
 
 \subsection{Showing abstract syntax trees}
 
@@ -202,10 +200,12 @@ $\ctx{e}'$.
 \end{lstlisting}
 
 \subsection{Building editor expressions}
-Editor expressions written in a text field would have to be lexed and parsed.
-This introduces syntax errors to the editor with regards to editor expressions,
-which goes against the spirit of the editor. Hence we created a way to
-build editor expressions in a similar manner to ASTs.
+
+Editor expressions written in a text field would have to be lexed and
+parsed.  This would then introduce syntax errors to the editor but
+with respect to editor expressions, and this goes against the spirit
+of the editor. We have therefore created a way to build editor
+expressions in a similar manner to ASTs.
 
 In order to build them, we need to introduce holes to the editor
 expressions. We define a hole term constructor for each type of editor

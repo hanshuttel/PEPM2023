@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{3}
+\begin{thebibliography}{5}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -57,16 +57,56 @@
 \showDOI{\tempurl}
 
 
+\bibitem[\protect\citeauthoryear{Hüttel, Andersen, Sandberg, Nielsen, and
+  Mikkelsen}{Hüttel et~al\mbox{.}}{2022}]%
+        {ifl2022}
+\bibfield{author}{\bibinfo{person}{Hans Hüttel},
+  \bibinfo{person}{Christoffer~Lind Andersen}, \bibinfo{person}{Nana~Gjerulf
+  Sandberg}, \bibinfo{person}{Anja Elisasen~Lumholtz Nielsen}, {and}
+  \bibinfo{person}{Peter Mikkelsen}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{A Structure Editor with Type-Safe Copy/Paste}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 34th Symposium on Implementation
+  and Application of Functional Languages (IFL 2022)}}.
+  \bibinfo{pages}{104--116}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Kj{\ae}r, Lundbergh, Mantzius, and
+  H{\"{u}}ttel}{Kj{\ae}r et~al\mbox{.}}{2021}]%
+        {DBLP:conf/synasc/KjaerLMH21}
+\bibfield{author}{\bibinfo{person}{Rasmus~Rendal Kj{\ae}r},
+  \bibinfo{person}{Magnus~Holm Lundbergh}, \bibinfo{person}{Magnus Mantzius},
+  {and} \bibinfo{person}{Hans H{\"{u}}ttel}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{An Editor Calculus With Undo/Redo}. In
+  \bibinfo{booktitle}{\emph{23rd International Symposium on Symbolic and
+  Numeric Algorithms for Scientific Computing, {SYNASC} 2021, Timisoara,
+  Romania, December 7-10, 2021}}, \bibfield{editor}{\bibinfo{person}{Carsten
+  Schneider}, \bibinfo{person}{Mircea Marin}, \bibinfo{person}{Viorel Negru},
+  {and} \bibinfo{person}{Daniela Zaharie}} (Eds.). \bibinfo{publisher}{{IEEE}},
+  \bibinfo{pages}{66--74}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/SYNASC54541.2021.00023}
+\showDOI{\tempurl}
+
+
 \bibitem[\protect\citeauthoryear{Omar, Voysey, Hilton, Aldrich, and
   Hammer}{Omar et~al\mbox{.}}{2017}]%
         {conf/popl/Hazelnut17}
 \bibfield{author}{\bibinfo{person}{Cyrus Omar}, \bibinfo{person}{Ian Voysey},
   \bibinfo{person}{Michael Hilton}, \bibinfo{person}{Jonathan Aldrich}, {and}
   \bibinfo{person}{Matthew~A. Hammer}.} \bibinfo{year}{2017}\natexlab{}.
-\newblock \showarticletitle{{Hazelnut: A Bidirectionally Typed Structure Editor
-  Calculus}}. In \bibinfo{booktitle}{\emph{44th {ACM} {SIGPLAN} Symposium on
-  Principles of Programming Languages ({POPL} 2017)}}.
+\newblock \showarticletitle{Hazelnut: a bidirectionally typed structure editor
+  calculus}. In \bibinfo{booktitle}{\emph{Proceedings of the 44th {ACM}
+  {SIGPLAN} Symposium on Principles of Programming Languages, {POPL} 2017,
+  Paris, France, January 18-20, 2017}},
+  \bibfield{editor}{\bibinfo{person}{Giuseppe Castagna} {and}
+  \bibinfo{person}{Andrew~D. Gordon}} (Eds.). \bibinfo{publisher}{{ACM}},
+  \bibinfo{pages}{86--99}.
 \newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3009837.3009900}
+\showDOI{\tempurl}
 
 
 \bibitem[\protect\citeauthoryear{Teitelbaum and Reps}{Teitelbaum and
