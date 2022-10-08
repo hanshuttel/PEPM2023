@@ -84,8 +84,8 @@ Editor expressions are always reduced in configurations of the form
 $\breakpoint{E,a}$, where $E$ is the given editor expression and $a$ is the
 currently build AST to which $E$ is applied. In terms of the labeled
 transition system, we incrementally reduce the configuration until $E'$ becomes
-$\nil$, and returns $\alpha$ for each increment. Figure
-\ref{fig:edtreductionrules} show the different reduction rules for editor
+$\nil$, and return $\alpha$ for each increment. Figure
+\ref{fig:edtreductionrules} shows the different reduction rules for editor
 expressions.
 
 As an example, the rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
@@ -102,7 +102,7 @@ judgements are of the form
 %
 \[ p,\Gamma_e \vdash E : ok \]
 %
-Here $p$ is a tree path $\Gamma_e$ is a type context that for any
+Here $p$ is a tree path and $\Gamma_e$ is a type context that for any
 given path $p_1$ gives us a pair $(\Gamma_a,\tau)$
 where $\Gamma_a$ is a type environment such that $dom(\Gamma_a)$ is
 the set of free program variables known at the end of the path $p_1$
