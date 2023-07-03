@@ -1,10 +1,11 @@
 \section{Introduction}
 \label{introduction}
 
-Structure editors are an alternative to the standard text editors that
-eliminate the occurrence of syntax errors by working directly with an
-abstract syntax tree (AST) and can also be used to give a more intuitive
-visualization of the program code.
+Structure editors, also known as projectional editors, are an
+alternative to the standard text editors that eliminate the occurrence
+of syntax errors by working directly with an abstract syntax tree
+(AST) and can also be used to give a more intuitive visualization of
+the program code.
 
 An early example of a structure editor is the Cornell Program Synthesizer
 from 1981 \cornell. It directly edits the ASTs in programs by using a cursor to
@@ -34,7 +35,9 @@ well-typed programs.
 In this paper we demonstrate that the editor calculus can serve as the
 basis of a structure editor by means of an implementation in
 Elm. This implementation effort involves an implementation of the
-spatial logic as well as the underlying type system.
+spatial logic as well as the underlying type system. We extend the
+programming language and editor calculus of \pepm such that we now
+obtain a full programming language.
 
 Moreover, in order to create editor expressions that are used to
 traverse and modify the ASTs, we introduce an editor expression
