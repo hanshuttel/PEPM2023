@@ -1,0 +1,1259 @@
+\documentclass[10pt,a4paper,english]{article}
+
+% Packages
+\input{assets/packages}
+\usepackage{parskip}
+\setlength{\parskip}{35pt}
+
+% Style
+\input{assets/style.sty}
+
+% Commands
+\input{assets/commands.tex}
+\newcommand\letin[3]{\texttt{let}~#1~#2~#3}
+\newcommand\letrec[3]{\texttt{letrec}~#1~#2~#3}
+\newcommand\match[1]{\texttt{match}~#1}
+
+% Document
+\begin{document}
+\title{Notes Taken During NTT-NEURION Project}
+\author{Thorbjørn Bülow Bringgaard}
+\maketitle
+\pagenumbering{arabic}
+\tableofcontents
+\newpage
+
+% Sections
+\section{Let}
+\subsection{AST}
+- Extended AST:
+\begin{align}
+  a ::= x
+  \mid c
+  \mid \app{a_1}{a_2}
+  \mid \abs{\bind{x}{\tau}}{a}
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \cursor{a}
+  \mid \breakpoint{a}
+  \mid \bind{\hole}{\tau}
+\end{align}
+
+- Extended cursor context:
+\begin{align}
+C ::= \cursor{\hat{a}}
+\mid \app{C}{\hat{a}}
+\mid \app{\hat{a}}{C}
+\mid \abs{x}{C}
+\mid \letin{x}{C}{\hat{a}}
+\mid \letin{x}{\hat{a}}{C}
+\mid \breakpoint{C}
+\end{align}
+
+- Added a new AST type rule:
+\begin{align}
+  (\text{T-LET})\qquad
+\frac{\ctx{a} \vdash \bind{a_1}{\tau_3} \quad \tau_3\sim\tau_1 \quad \ctx{a},~\bind{x}{\tau_1} \vdash \bind{a_2}{\tau_2}}
+{\ctx{a} \vdash \bind{\letin{\bind{x}{\tau_1}}{a_1}{a_2}}{\tau_2}}
+\end{align}
+
+- Added a new big step transition rule:
+\begin{align}
+(\text{B-LET})\qquad
+\frac{\app{\abs{x}{a_2}}{a_1}\to a_2'}{\letin{x}{a_1}{a_2} \to a_2'}
+\end{align}
+Evaluation is simply syntactic sugar for an application of a lambda.
+
+\subsection{Editor}
+- Extended AAM:
+\begin{align}
+  D ::= \var{x}
+  \mid \const{c}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2}
+  \mid \aamLambda{\bind{x}{\tau_1\to\tau_2}}
+  \mid \bind{\texttt{let}~x}{\tau_1,\tau_2}
+  \mid \aamBreak
+  \mid \bind{\aamHole}{\tau}
+\end{align}
+
+- Extended definition of $follows$ with a new case:
+\begin{align}
+follows(\texttt{let}~x, p) = \{ (p~\texttt{one}, (\emptyset, ?)), (p~\texttt{two}, (\emptyset, ?)) \}
+\end{align}
+
+
+- Extended substitution reduction rules with rule:
+\begin{align}
+(\text{LET})\qquad
+\frac{}{\cursor{\hat{a}}\transition{\{let x\}}\cursor{\letin{x}{\hole}{\hole}}}
+\end{align}
+
+- Added four new cursor movement reduction rules:
+\begin{align}
+  (\text{LETP-1}) \qquad &\frac{}{\letin{x}{\cursor{\hat{a}_1}}{\hat{a}_2}\transition{parent}\cursor{\letin{x}{\hat{a}_1{\hat{a}_2}}}}\\
+(\text{LETP-2}) \qquad &\frac{}{\letin{x}{\hat{a}_1}{\cursor{\hat{a}_2}}\transition{parent}\cursor{\letin{x}{\hat{a}_1}{\hat{a}_2}}}\\
+(\text{LETC-1}) \qquad &\frac{}{\cursor{\letin{x}{\hat{a}_1}{\hat{a}_2}}\transition{child 1}\letin{x}{\cursor{\hat{a}_1}}{\hat{a}_2}}\\
+(\text{LETC-2}) \qquad &\frac{}{\cursor{\letin{x}{\hat{a}_1}{\hat{a}_2}}\transition{child 2}\letin{x}{\hat{a}_1}{\cursor{\hat{a}_2}}}
+\end{align}
+
+- Added new reduction rules for conditions:
+\begin{align}
+  (\text{AT-LET})\qquad&\frac{}{\letin{x}{\hat{a}_1}{\hat{a}_2} \vDash \at\texttt{let}~x}\\
+  (\text{POS-LET-1})\qquad&\frac{\hat{a}_1\vDash\possibly D}{\letin{x}{\hat{a}_1}{\hat{a}_2} \vDash \possibly D}\\
+  (\text{POS-LET-2})\qquad&\frac{\hat{a}_2\vDash\possibly D}{\letin{x}{\hat{a}_1}{\hat{a}_2} \vDash \possibly D}\\
+  (\text{NEC-LET})\qquad&\frac{\hat{a}_1\vDash\possibly D \quad \hat{a}_2\vDash\possibly D}{\letin{x}{\hat{a}_1}{\hat{a}_2} \vDash \necessarily D}
+\end{align}
+
+- Modified two existing $limits$ cases (underlining indicate additions):
+\begin{align}
+&limits(\possibly D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}\underline{, \texttt{let}~x}\})\\
+&limits(\necessarily D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}\underline{, \texttt{let}~x}\})
+\end{align}
+
+- Added new editor expression type rule:
+\begin{align}
+  (\text{T-SUB-LET})\qquad
+&\frac{\ctx{e}(p) = (\ctx{a},\tau_3) \quad \tau_3\sim\tau_2 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{let}~x}{\tau_1,\tau_2}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, \tau_2)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{two}}{((\ctx{a},\bind{x}{\tau_1}),\tau_2)}
+\end{align}
+
+\newpage
+
+\section{Letrec}
+\subsection{AST}
+- Extended AST:
+\begin{align}
+  a ::= x
+  \mid c
+  \mid \app{a_1}{a_2}
+  \mid \abs{\bind{x}{\tau}}{a}
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \letrec{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \cursor{a}
+  \mid \breakpoint{a}
+  \mid \bind{\hole}{\tau}
+\end{align}
+
+- Extended cursor context:
+\begin{align}
+  C &::= \cursor{\hat{a}}
+\mid \app{C}{\hat{a}}
+\mid \app{\hat{a}}{C}
+\mid \abs{x}{C}
+\mid \letin{x}{C}{\hat{a}}
+\mid \letin{x}{\hat{a}}{C}
+\mid \letrec{x}{C}{\hat{a}}
+\mid \letrec{x}{\hat{a}}{C}
+\mid \breakpoint{C}
+\end{align}
+
+- Added a new AST type rule:
+\begin{align}
+  (\text{T-LETREC})\qquad
+  \frac{\ctx{a},~\bind{x}{\tau_1} \vdash \bind{a_1}{\tau_3} \quad \tau_3\sim\tau_1 \quad \ctx{a},~\bind{x}{\tau_1} \vdash \bind{a_2}{\tau_2}}
+{\ctx{a} \vdash \bind{\letrec{\bind{x}{\tau_1}}{a_1}{a_2}}{\tau_2}}
+\end{align}
+
+- Added a new big step transition rule:
+\begin{align}
+(\text{B-LETREC})\qquad
+\frac{\app{\abs{x}{a_2}}{(\app{\text{Y}}{\abs{x}{a_1}})}\to a_2'}{\letrec{x}{a_1}{a_2} \to a_2'}
+\end{align}
+where the Y is the fixed-point Y-combinator:
+\begin{align}
+  \text{Y} = \abs{f}{\app{(\abs{x}{\app{f}{(\app{x}{x})}})}{(\abs{x}{\app{f}{(\app{x}{x})}})}}
+\end{align}
+That is, $\app{\text{Y}}{\abs{x}{a_1}}$ expands to:
+\begin{align}
+&\app{\text{Y}}{\abs{x}{a_1}}\\
+&\app{(\abs{f}{\app{(\abs{x}{\app{f}{(\app{x}{x})}})}{(\abs{x}{\app{f}{(\app{x}{x})}})}})}{\abs{x}{a_1}}\\
+&\app{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})}{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})}\\
+&\app{\abs{x}{a_1}}{(\app{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})}{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})})}\\
+&\app{\abs{x}{a_1}}{(\app{\text{Y}}{\abs{x}{a_1}})}\\
+&a_1[\app{\text{Y}}{\abs{x}{a_1}}/x]
+\end{align}
+Furthermore, the big-step transition can be seen as syntactic sugar:
+\begin{align}
+  \letrec{x}{a_1}{a_2} \equiv
+  \letin{x}{(\app{\text{Y}}{\abs{x}{a_1}})}{a_2}\equiv
+  \app{\abs{x}{a_2}}{(\app{\text{Y}}{\abs{x}{a_1}})}
+\end{align}
+This approach only works for lazy-evaluation. However, the lambda calculus
+reduces eagerly, so the Y-combinator cannot be directly reduced in our
+implementation. The Z-combinator comes to its rescue:
+\begin{align}
+  \text{Z} = \abs{f}{\app{(\abs{x}{\app{f}{(\abs{v}{\app{\app{x}{x}}{v}})}})}{(\abs{x}{\app{f}{(\abs{v}{\app{\app{x}{x}}{v}})}})}}
+\end{align}
+The added $v$ indicates the next argument of the recursion, and thus, enforce
+reduction of the argument before reducing the function, stopping the infinite
+recursion. We can use the Z-combinator instead of the Y-combinator in the
+implementation.
+
+\subsection{Editor}
+
+- Extended AAM:
+\begin{align}
+  D ::= &\var{x}
+  \mid \const{c}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2}
+  \mid \aamLambda{\bind{x}{\tau_1\to\tau_2}}
+  \mid \bind{\texttt{let}~x}{\tau_1,\tau_2}
+  \mid \bind{\texttt{letrec}~x}{\tau_1,\tau_2}
+  \mid \aamBreak
+  \mid \bind{\aamHole}{\tau}
+\end{align}
+
+- Extended definition of $follows$ with a new case:
+\begin{align}
+follows(\texttt{letrec}~x, p) = \{ (p~\texttt{one}, (\emptyset, ?)), (p~\texttt{two}, (\emptyset, ?)) \}
+\end{align}
+
+
+
+- Extended substitution reduction rules with rule:
+\begin{align}
+(\text{LETREC})\qquad
+\frac{}{\cursor{\hat{a}}\transition{\{letrec x\}}\cursor{\letrec{x}{\hole}{\hole}}}
+\end{align}
+
+- Added four new cursor movement reduction rules:
+\begin{align}
+  (\text{LETRECP-1}) \qquad &\frac{}{\letrec{x}{\cursor{\hat{a}_1}}{\hat{a}_2}\transition{parent}\cursor{\letrec{x}{\hat{a}_1{\hat{a}_2}}}}\\
+(\text{LETRECP-2}) \qquad &\frac{}{\letrec{x}{\hat{a}_1}{\cursor{\hat{a}_2}}\transition{parent}\cursor{\letrec{x}{\hat{a}_1}{\hat{a}_2}}}\\
+(\text{LETRECC-1}) \qquad &\frac{}{\cursor{\letrec{x}{\hat{a}_1}{\hat{a}_2}}\transition{child 1}\letrec{x}{\cursor{\hat{a}_1}}{\hat{a}_2}}\\
+(\text{LETRECC-2}) \qquad &\frac{}{\cursor{\letrec{x}{\hat{a}_1}{\hat{a}_2}}\transition{child 2}\letrec{x}{\hat{a}_1}{\cursor{\hat{a}_2}}}
+\end{align}
+
+- Added new reduction rules for conditions:
+\begin{align}
+  (\text{AT-LETREC})\qquad&\frac{}{\letrec{x}{\hat{a}_1}{\hat{a}_2} \vDash \at\texttt{letrec}~x}\\
+  (\text{POS-LETREC-1})\qquad&\frac{\hat{a}_1\vDash\possibly D}{\letrec{x}{\hat{a}_1}{\hat{a}_2} \vDash \possibly D}\\
+  (\text{POS-LETREC-2})\qquad&\frac{\hat{a}_2\vDash\possibly D}{\letrec{x}{\hat{a}_1}{\hat{a}_2} \vDash \possibly D}\\
+  (\text{NEC-LETREC})\qquad&\frac{\hat{a}_1\vDash\possibly D \quad \hat{a}_2\vDash\possibly D}{\letrec{x}{\hat{a}_1}{\hat{a}_2} \vDash \necessarily D}
+\end{align}
+
+- Modified two existing $limits$ cases (underlining indicate additions):
+\begin{align}
+&limits(\possibly D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}, \texttt{let}~x, \texttt{match}, \texttt{pattern}, \texttt{lvar}, \texttt{lconst}~lc \underline{, \texttt{letrec}~x}\})\\
+&limits(\necessarily D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}, \texttt{let}~x, \texttt{match}, \texttt{pattern}, \texttt{lvar}, \texttt{lconst}~lc \underline{,  \texttt{letrec}~x} \})
+\end{align}
+
+- Added new editor expression type rule:
+\begin{align}
+  (\text{T-SUB-LETREC})\qquad
+&\frac{\ctx{e}(p) = (\ctx{a},\tau_3) \quad \tau_3\sim\tau_2 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{letrec}~x}{\tau_1,\tau_2}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, \tau_2)}, \bind{p~\texttt{one}}{((\ctx{a},\bind{x}{\tau_1}), \tau_1)}, \bind{p~\texttt{two}}{((\ctx{a},\bind{x}{\tau_1}),\tau_2)}
+\end{align}
+
+\newpage
+
+
+\section{(Deprecated) Pattern matching}
+\subsection{AST}
+- Extended AST:
+\begin{align}
+  a &::= x
+  \mid c
+  \mid \app{a_1}{a_2}
+  \mid \abs{\bind{x}{\tau}}{a}
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \letrec{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \bind{\texttt{match}}{\tau}~ls
+  \mid \cursor{a}
+  \mid \breakpoint{a}
+  \mid \bind{\hole}{\tau}\\
+  ls &::= l~ls
+  \mid l 
+  \mid \cursor{ls}
+  \mid \breakpoint{ls}
+  \mid \bind{\hole_{ls}}{\tau}\\
+  l &::= lx~a
+  \mid lc~a
+  \mid \cursor{l}
+  \mid \bind{\hole_l}{\tau}
+\end{align}
+Where $lx$ and $lc$ are pattern variables/constants, respectively.
+
+- Extended cursor context:
+\begin{align}
+  C &::= \cursor{\hat{a}}
+\mid \app{C}{\hat{a}}
+\mid \app{\hat{a}}{C}
+\mid \abs{x}{C}
+\mid \letin{x}{C}{\hat{a}}
+\mid \letin{x}{\hat{a}}{C}
+\mid \letrec{x}{C}{\hat{a}}
+\mid \letrec{x}{\hat{a}}{C}
+\mid \match{Cls}
+\mid \breakpoint{C}\\
+  Cls &::= \cursor{\hat{ls}}
+  \mid \hat{l}~Cls
+  \mid Cl~\hat{ls}
+  \mid Cl
+  \mid \breakpoint{Cls}\\
+  Cl &::= \cursor{\hat{l}}
+  \mid lx~C
+  \mid lc~C
+\end{align}
+
+- Added new AST type rules:
+\begin{align}
+  (\text{T-MATCH})\qquad&\frac{\ctx{a} \vdash \bind{ls}{\tau_2}\quad\tau_1\sim\tau_2}{\ctx{a} \vdash \bind{\bind{\texttt{match}}{\tau_1}~ls}{\tau_1}}\\
+  (\text{T-HOLE-2})\qquad&\frac{}{\ctx{a} \vdash \bind{\bind{\hole_{ls}}{\tau}}{\tau}}\\
+  (\text{T-HOLE-3})\qquad&\frac{}{\ctx{a} \vdash \bind{\bind{\hole_{l}}{\tau}}{\tau}}\\
+  (\text{T-BREAK-2})\qquad&\frac{\ctx{a} \vdash \bind{ls}{\tau}}{\ctx{a} \vdash \bind{\breakpoint{ls}}{\breakpoint{\tau}}}\\
+  (\text{T-CURSOR-2})\qquad&\frac{\ctx{a} \vdash \bind{ls}{\tau}}{\ctx{a} \vdash \bind{\cursor{ls}}{\tau}}\\
+  (\text{T-CURSOR-3})\qquad&\frac{\ctx{a} \vdash \bind{l}{\tau}}{\ctx{a} \vdash \bind{\cursor{l}}{\tau}}\\
+  (\text{T-PATTERN})\qquad&\frac{\ctx{a} \vdash \bind{l}{\tau_1}\quad\ctx{a} \vdash \bind{ls}{\tau_2}\quad \tau_1\sim\tau_2}{\ctx{a} \vdash \bind{l~ls}{\tau_1}}\\
+  (\text{T-LVAR})\qquad&\frac{\ctx{a} \vdash \bind{a}{\tau}}{\ctx{a} \vdash \bind{lx~a}{\tau}}\\
+  (\text{T-LCONST})\qquad&\frac{\ctx{a} \vdash \bind{a}{\tau}}{\ctx{a} \vdash \bind{lc~a}{\tau}}
+\end{align}
+
+- Extended big step transitions:
+We have patterns $ls \in \textbf{Ls}$, $l \in \textbf{L}$ and that a specific pattern has type $s \in \textbf{LVal} = \{lx,lc\}$ (can easily be extended). $\sim_l$ denotes pattern consistency, i.e., if a value of a tree matches a pattern:
+\begin{align}
+  (\text{PATTERN-CONS-1}) \quad &\frac{v\sim_l s \vdash b}{s\sim_l v \vdash b}\\
+  (\text{PATTERN-CONS-2}) \quad &\frac{v = x \quad s = lx}{v\sim_l s \vdash \texttt{true}}\\
+  (\text{PATTERN-CONS-3}) \quad &\frac{v = c \quad s = lc}{v\sim_l s \vdash \texttt{true}}\\
+\end{align}
+Then we need a new big step semantics for evaluating patterns; could be described as $(\textbf{Ls},\to,\{\textbf{LVal}\times\textbf{Ast}\})$:
+\begin{align}
+  (\text{B-PATTERNS-1})\quad& \frac{ls\to ls'}{\cursor{ls}\to ls'}\\
+  (\text{B-PATTERNS-2})\quad& \frac{}{\hole_{ls}\to\emptyset}\\
+  (\text{B-PATTERNS-3})\quad& \frac{}{\breakpoint{ls}\to\emptyset}\\
+  (\text{B-PATTERNS-4})\quad& \frac{l \to l' \quad ls\to ls'}{l~ls\to l' \cup ls'}\\
+  (\text{B-PATTERNS-5})\quad& \frac{l \to l'}{l\to l'}
+\end{align}
+Next we need a new big step semantics for evaluating a pattern; $(\textbf{L},\to,\{\textbf{LVal}\times\textbf{Ast}\})$:
+\begin{align}
+  (\text{B-PATTERN-1})\quad& \frac{l\to l'}{\cursor{l}\to l'}\\
+  (\text{B-PATTERN-2})\quad& \frac{}{\hole_{l}\to\emptyset}\\
+  (\text{B-PATTERN-3})\quad& \frac{}{lx~a\to\{(lx,a)\}}\\
+  (\text{B-PATTERN-4})\quad& \frac{}{lc~a\to\{(lc,a)\}}\\
+\end{align}
+Finally, we can extend the big step transition rules for AST:
+\begin{align}
+  (\text{B-MATCH})\quad& \frac{}{\match{ls}\to\match{ls}}\\
+  (\text{B-APP-2})\quad& \frac{a_1\to\match{ls}\quad a_2\to v\quad ls\to \{(l'_1,a'_1),...,(l'_n,a'_n)\}\quad v\sim_l l'_i\quad a_i'\to v'}{\app{a_1}{a_2}\to v'}i\in\{1,...,n\}\\
+                       &\text{where}~v \notin \textbf{BVal} \cup \textbf{HVal}\\
+  (\text{B-APP-3})\quad& \frac{a_1\to\match{ls}\quad a_2\to v\quad ls\to ls'=\{(l'_1,a'_1),...,(l'_n,a'_n)\}\quad v\nsim_l l'_i}{\app{a_1}{a_2}\to \app{(\texttt{match}~ls)}{v}} i\in\{1,...,n\}\\
+                       &\text{where}~v \notin \textbf{BVal} \cup \textbf{HVal}\\
+  (\text{B-APPB-3})\quad& \frac{a_1\to\match{ls}\quad a_2\to w}{\app{a_1}{a_2}\to \app{(\texttt{match}~ls)}{w}}\\
+  (\text{B-APPH-3})\quad& \frac{a_1\to\match{ls}\quad a_2\to u}{\app{a_1}{a_2}\to \app{(\texttt{match}~ls)}{u}}
+\end{align}
+
+\subsection{Editor}
+- Extended AAM:
+\begin{align}
+  D ::= &\var{x}
+  \mid \const{c}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2}
+  \mid \aamLambda{\bind{x}{\tau_1\to\tau_2}}
+  \mid \bind{\texttt{let}~x}{\tau_1,\tau_2}
+  \mid \bind{\texttt{letrec}~x}{\tau_1,\tau_2}
+  \mid \aamBreak\\
+  &\mid \bind{\aamHole}{\tau}
+  \mid \bind{\texttt{match}}{\tau}
+  \mid\bind{\texttt{pattern}}{\tau}
+  \mid \bind{\texttt{lvar}}{\tau}
+  \mid \bind{\texttt{lconst}~lc}{\tau}
+\end{align}
+
+- Extended definition of $follows$ with a new cases:
+\begin{align}
+  follows(\texttt{match}, p) &= \{ (p~\texttt{one}, (\emptyset, ?))\}\\
+  follows(\texttt{pattern}, p) &= \{ (p~\texttt{one}, (\emptyset, ?)), p~\texttt{two}, (\emptyset, ?))\}\\
+  follows(\texttt{lvar}, p) &= \{ (p~\texttt{one}, (\emptyset, ?))\}\\
+  follows(\texttt{lconst}, p) &= \{ (p~\texttt{one}, (\emptyset, ?))\}
+\end{align}
+
+- Modified two existing $limits$ cases (underlining indicate additions):
+\begin{align}
+&limits(\possibly D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}, \texttt{let}~x \underline{, \texttt{match}, \texttt{pattern}, \texttt{lvar}, \texttt{lconst}~lc}\})\\
+&limits(\necessarily D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}, \texttt{let}~x \underline{, \texttt{match}, \texttt{pattern}, \texttt{lvar}, \texttt{lconst}~lc} \})
+\end{align}
+
+
+
+
+
+- Added some new cursor movement reduction rules:
+\begin{align}
+(\text{MATCHP-1}) \qquad &\frac{}{\match{\cursor{\hat{ls}}}\transition{parent}\cursor{\match{\hat{ls}}}}\\
+(\text{MATCHP-2}) \qquad &\frac{}{\cursor{\hat{l}}~\hat{ls}\transition{parent}\cursor{\hat{l}~\hat{ls}}}\\
+(\text{MATCHP-3}) \qquad &\frac{}{\hat{l}~\cursor{\hat{ls}}\transition{parent}\cursor{\hat{l}~\hat{ls}}}\\
+(\text{MATCHP-4}) \qquad &\frac{}{\hat{l}~\cursor{\hat{l}}\transition{parent}\cursor{\hat{l}~\hat{ls}}}\\
+(\text{MATCHP-5}) \qquad &\frac{}{\breakpoint{\cursor{\hat{ls}}}\transition{parent}\cursor{\breakpoint{\hat{ls}}}}\\
+(\text{MATCHP-6}) \qquad &\frac{}{lx~\cursor{\hat{a}}\transition{parent}\cursor{lx~\hat{a}}}\\
+(\text{MATCHP-7}) \qquad &\frac{}{lc~\cursor{\hat{a}}\transition{parent}\cursor{lc~\hat{a}}}\\
+(\text{MATCHC-1}) \qquad &\frac{}{\cursor{\match{\hat{ls}}}\transition{child~1}\match{\cursor{\hat{ls}}}}\\
+(\text{MATCHC-2}) \qquad &\frac{}{\cursor{\hat{l}~\hat{ls}}\transition{child~1}\cursor{\hat{l}}~\hat{ls}}\\
+(\text{MATCHC-3}) \qquad &\frac{}{\cursor{\hat{l}~\hat{ls}}\transition{child~2}\hat{l}~\cursor{\hat{ls}}}\\
+(\text{MATCHC-4}) \qquad &\frac{}{\cursor{\hat{l}~\hat{l}}\transition{child~1}\cursor{\hat{l}}~\hat{l}}\\
+(\text{MATCHC-5}) \qquad &\frac{}{\cursor{\hat{l}~\hat{l}}\transition{child~2}\hat{l}~\cursor{\hat{l}}}\\
+(\text{MATCHC-6}) \qquad &\frac{}{\cursor{\breakpoint{\hat{ls}}}\transition{child~1}\breakpoint{\cursor{\hat{ls}}}}\\
+(\text{MATCHC-7}) \qquad &\frac{}{\cursor{lx~\hat{a}}\transition{child~1}lx~\cursor{\hat{a}}}\\
+(\text{MATCHC-8}) \qquad &\frac{}{\cursor{lc~\hat{a}}\transition{child~1}lc~\cursor{\hat{a}}}
+\end{align}
+
+
+
+- Added new reduction rules for conditions:
+\begin{align}
+  (\text{AT-MATCH})\qquad&\frac{}{\texttt{match}~\hat{ls} \vDash \at\texttt{match}}\\
+  (\text{AT-PATTERN})\qquad&\frac{}{l~ls \vDash \at\texttt{pattern}}\\
+  (\text{AT-LVAR})\qquad&\frac{}{lx~\hat{a} \vDash \at\texttt{lvar}}\\
+  (\text{AT-LCONST})\qquad&\frac{}{lc~\hat{a} \vDash \at\texttt{lconst}~lc}\\
+  (\text{AT-HOLE-2})\qquad&\frac{}{\hole_{ls} \vDash \at\texttt{hole}}\\
+  (\text{AT-HOLE-3})\qquad&\frac{}{\hole_{l} \vDash \at\texttt{hole}}\\
+  (\text{AT-BREAK-2})\qquad&\frac{}{\breakpoint{\hat{ls}} \vDash \at\texttt{break}}
+\end{align}
+\begin{align}
+  (\text{POS-MATCH})\qquad&\frac{\hat{ls}\vDash\possibly D}{\texttt{match}~\hat{ls} \vDash \possibly D}\\
+  (\text{POS-PATTERN-1})\qquad&\frac{\hat{l}\vDash\possibly D}{\hat{l}~\hat{ls} \vDash \possibly D}\\
+  (\text{POS-PATTERN-2})\qquad&\frac{\hat{ls}\vDash\possibly D}{\hat{l}~\hat{ls} \vDash \possibly D}\\
+  (\text{POS-BREAK-2})\qquad&\frac{\hat{ls}\vDash\possibly D}{\breakpoint{\hat{ls}} \vDash \possibly D}\\
+  (\text{POS-LVAR})\qquad&\frac{\hat{a}\vDash\possibly D}{lx~\hat{a} \vDash \possibly D}\\
+  (\text{POS-LCONST})\qquad&\frac{\hat{a}\vDash\possibly D}{lc~\hat{a} \vDash \possibly D}
+\end{align}
+\begin{align}
+  (\text{NEC-MATCH})\qquad&\frac{\hat{ls}\vDash\possibly D}{\texttt{match}~\hat{ls} \vDash \necessarily D}\\
+  (\text{NEC-PATTERN})\qquad&\frac{\hat{ps}\vDash\possibly D\quad\hat{l}\vDash\possibly D}{\hat{l}~\hat{ls} \vDash \necessarily D}\\
+  (\text{NEC-BREAK-2})\qquad&\frac{\hat{ls}\vDash\possibly D}{\breakpoint{\hat{ls}} \vDash \necessarily D}\\
+  (\text{NEC-LVAR})\qquad&\frac{\hat{a}\vDash\possibly D}{lx~\hat{a} \vDash \necessarily D}\\
+  (\text{NEC-LCONST})\qquad&\frac{\hat{a}\vDash\possibly D}{lc~\hat{a} \vDash \necessarily D}
+\end{align}
+
+- Extended substitution reduction rules with some new rules:
+\begin{align}
+  (\text{MATCH})\quad& \frac{}{\cursor{\hat{a}}\transition{\{match\}}\cursor{\match{\hole_{ls}}}}\\
+  (\text{PATTERNS-1})\quad& \frac{}{\cursor{\hat{ls}}\transition{\{pattern\}}\cursor{\hole_l~\hole_{ls}}}\\
+  (\text{PATTERNS-2})\quad& \frac{}{\cursor{\hat{ls}}\transition{\{hole\}}\cursor{\hole_{ls}}}\\
+  (\text{PATTERNS-3})\quad& \frac{}{\cursor{\hat{ls}}\transition{\{lvar\}}\cursor{lx~\hole}}\\
+  (\text{PATTERNS-4})\quad& \frac{}{\cursor{\hat{ls}}\transition{\{lconst~lc\}}\cursor{lc~\hole}}\\
+  (\text{PATTERNS-5})\quad& \frac{\hat{ls}\neq\breakpoint{\hat{ls}'}}{\cursor{\hat{ls}}\transition{\{break\}}\cursor{\breakpoint{\hat{ls}}}}\\
+  (\text{PATTERNS-6})\quad& \frac{}{\cursor{\breakpoint{\hat{ls}}}\transition{\{break\}}\cursor{\hat{ls}}}\\
+  (\text{PATTERN-1})\quad& \frac{}{\cursor{\hat{l}}\transition{\{lvar\}}\cursor{lx~\hole}}\\
+  (\text{PATTERN-2})\quad& \frac{}{\cursor{\hat{l}}\transition{\{lconst~lc\}}\cursor{lc~\hole}}\\
+  (\text{PATTERN-3})\quad& \frac{}{\cursor{\hat{l}}\transition{\{hole\}}\cursor{\hole_{l}}}
+\end{align}
+
+
+
+- Added new editor expression type rules:
+\begin{align}
+  (\text{T-SUB-MATCH})\qquad&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim\tau_1 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{match}}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}\\
+  (\text{T-SUB-PATTERN})\qquad&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim\tau_1 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{pattern}}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{two}}{(\ctx{a}, \tau_1)}\\
+  (\text{T-SUB-LVAR})\qquad&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim\tau_1 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{lvar}}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}\\
+  (\text{T-SUB-LCONST})\qquad&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim\tau_1 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{lconst}~lc}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}
+\end{align}
+
+\newpage
+
+\section{Pattern matching}
+Instead of defining pattern match by a syntactic manner - which leads to awkward code and graph / tree representation (as two new terms are introduced, all terms are cyclic and we do not know in which term the cursor lies before evaluation) - we could instead utilize the already existing type system for the definition. Using this approach however, sacrifices some freedom of the editor in that patterns cannot be navigated and manipulated directly through a cursor, but we can easily regain this freedom in the semantics and by semantically equivalent editor commands sequences (discussed later).
+
+\subsection{AST}
+The new syntax is listed below. The most important distinction between this new definition and the old one, is that \underline{patterns are regarded as functions} instead of syntactic constructs. This also means that patterns now have a function type, specifically the type $\texttt{?}\to\tau$. I.e. patterns are functions that can take arguments of all types and produce type $\tau$.
+\begin{align}
+  a &::= x
+  \mid c
+  \mid \app{a_1}{a_2}
+  \mid \abs{\bind{x}{\tau}}{a}
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \letrec{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid l.a_1.a_2
+  \mid l.a
+  \mid \cursor{a}
+  \mid \breakpoint{a}
+  \mid \bind{\hole}{\tau}\\
+  l &::= x_l
+  \mid c_l
+\end{align}
+
+Since patterns are now functions, a pattern is in normal form. We have the semantics that $l.a$ is a function that, given an argument of any type, either returns $a$ or fails, depending on if the arguments matches the pattern $l$, and $l.a_1.a_2$ is a function that can do two things: 1) it can be used to construct a list of patterns of which we match against, or 2) it can be used to construct a fallthrough case. Case 1) is when $a_2$ takes shape  of either $l'.a'$ or $l'.a_1'.a_2'$, and case 2) is when $a_2$ takes any other shape. Non-exhaustive patterns introduces failures into the semantics, and thus, we add a new subset of $\val$ called \textbf{FVal}, which represents failures, and use the metavariable $f$ to describe values in it. (Note that in the implementation we have omitted this \textbf{FVal} set since we already lifted the \textbf{Val} returned by the evaluator in the Result type. Thus, I have not described \textbf{FVal} in detail as the lift approach may be better suited, at least for our implementation.)
+
+Formally, we add the following rules to the big step transition system, where \texttt{match} is a binary relation that defines when a pattern matches a value (i.e. if the value and pattern both are some variable or both are the same constant):
+
+\begin{align}
+  c~\texttt{match}~c=\texttt{true}\qquad x_1~\texttt{match}~x_2=\texttt{true}
+\end{align}
+\begin{align}
+(\text{B-PATTERN-1})\qquad
+&\frac{}{l.a \to l.a}\\
+(\text{B-PATTERN-2})\qquad
+&\frac{}{l.a_1.a_2 \to l.a_1.a_2}\\
+\text{(B-APP)}\qquad
+&\frac{a_1\to\abs{x}{a_1'}\quad a_2\to v\quad a'_1\{v/x\}\to v}{\app{a_1}{a_2}\to v'}\\
+&\text{where}~v\notin\bval\cup\hval\cup\textbf{FVal}\\
+(\text{B-APPP-1})\qquad
+&\frac{a_1 \to l.a'\quad a_2 \to v\quad v~\texttt{match}~l\quad a' \to v'}{\app{a_1}{a_2} \to v'}\\
+&\text{where}~v\notin\bval\cup\hval\cup\textbf{FVal}\\
+(\text{B-APPP-2})\qquad
+&\frac{a_1 \to l.a'\quad a_2 \to v\quad \neg(v~\texttt{match}~l)\quad}{\app{a_1}{a_2} \to f}\\
+&\text{where}~v\notin\bval\cup\hval\cup\textbf{FVal}\\
+(\text{B-APPP-3})\qquad
+&\frac{a_1\to l.a'_1.a'_2\quad a_2\to v \quad v~\texttt{match}~l\quad a'_1\to v'}{\app{a_1}{a_2} \to v'}\\
+&\text{where}~v\notin\bval\cup\hval\cup\textbf{FVal}\\
+(\text{B-APPP-4})\qquad
+&\frac{a_1\to l.a'_1.a'_2\quad a_2\to v \quad \neg(v~\texttt{match}~l)\quad a'_2\to v'}{\app{a_1}{a_2} \to v'}\\
+&\text{where}~v\notin\bval\cup\hval\cup\textbf{FVal},~a'_2\neq l''.a''\land a'_2\neq l''.a_1''.a_2''\\
+(\text{B-APPP-5})\qquad
+&\frac{a_1\to l.a'_1.a'_2\quad a_2\to v \quad \neg(v~\texttt{match}~l)\quad \app{a'_2}{a_2}\to v'}{\app{a_1}{a_2} \to v'}\\
+&\text{where}~v\notin\bval\cup\hval\cup\textbf{FVal},~a'_2= l''.a''\lor a'_2= l''.a_1''.a_2''\\
+(\text{B-APPB-3})\qquad
+&\frac{a_1\to l.a'\quad a_2\to w}{\app{a_1}{a_2} \to \app{l.a'}{w}}\\
+(\text{B-APPB-4})\qquad
+&\frac{a_1\to l.a_1'.a_2'\quad a_2\to w}{\app{a_1}{a_2} \to \app{l.a_1'.a_2'}{w}}\\
+(\text{B-APPH-3})\qquad
+&\frac{a_1\to l.a'\quad a_2\to u}{\app{a_1}{a_2} \to \app{l.a'}{u}}\\
+(\text{B-APPH-4})\qquad
+&\frac{a_1\to l.a_1'.a_2'\quad a_2\to u}{\app{a_1}{a_2} \to \app{l.a_1'.a_2'}{u}}\\
+(\text{B-APPF-1})\qquad
+&\frac{a_1\to f}{\app{a_1}{a_2} \to f}\\
+(\text{B-APPF-2})\qquad
+&\frac{a_1\to \abs{x}{a'_1}\quad a_2\to f}{\app{a_1}{a_2} \to f}\\
+(\text{B-APPF-3})\qquad
+&\frac{a_1\to l.a'\quad a_2\to f}{\app{a_1}{a_2} \to f}\\
+(\text{B-APPF-4})\qquad
+&\frac{a_1\to l.a_1'.a_2'\quad a_2\to f}{\app{a_1}{a_2} \to f}
+\end{align}
+
+Next are the added AST type rules:
+\begin{align}
+  (\text{T-PATTERN-1})\qquad&\frac{\ctx{a} \vdash \bind{a}{\tau}}{\ctx{a} \vdash \bind{l.a}{?\to\tau}}\\
+  (\text{T-PATTERN-2})\qquad&\frac{\ctx{a} \vdash \bind{a_1}{\tau_1}\quad \ctx{a} \vdash \bind{a_2}{\tau_2}\quad\tau_1\sim\tau_2}{\ctx{a} \vdash \bind{l.a_1.a_2}{?\to\tau_1}}\\
+  (\text{T-PATTERN-3})\qquad&\frac{\ctx{a} \vdash \bind{a_1}{\tau_1}\quad \ctx{a} \vdash \bind{a_2}{?\to\tau_2}\quad\tau_1\sim\tau_2}{\ctx{a} \vdash \bind{l.a_1.a_2}{?\to\tau_1}}\\
+\end{align}
+
+Since a $l$-term cannot contain a cursor, the cursor context is trivially extended.
+\begin{align}
+  C &::= \cursor{\hat{a}}
+\mid \app{C}{\hat{a}}
+\mid \app{\hat{a}}{C}
+\mid \abs{x}{C}
+\mid \letin{x}{C}{\hat{a}}
+\mid \letin{x}{\hat{a}}{C}
+\mid \letrec{x}{C}{\hat{a}}
+\mid \letrec{x}{\hat{a}}{C}
+\mid l.C
+\mid l.C.\hat{a}
+\mid l.\hat{a}.C
+\mid \breakpoint{C}
+\end{align}
+
+
+
+
+
+\subsection{Editor}
+The editor rules are also trivially extended. For AAM we have:
+\begin{align}
+  D ::= &\var{x}
+  \mid \const{c}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2}
+  \mid \aamLambda{\bind{x}{\tau_1\to\tau_2}}
+  \mid \bind{\texttt{let}~x}{\tau_1,\tau_2}
+  \mid \bind{\texttt{letrec}~x}{\tau_1,\tau_2}
+  \mid \aamBreak\\
+  &\mid \bind{\aamHole}{\tau}
+  \mid\bind{\texttt{pattern}~l}{\tau}
+  \mid\bind{\texttt{patterns}~l}{\tau}
+\end{align}
+
+The definition of $follows$ is extended with the new cases:
+\begin{align}
+  follows(\texttt{pattern}~l, p) &= \{ (p~\texttt{one}, (\emptyset, ?)) \}\\
+follows(\texttt{patterns}~l, p) &= \{ (p~\texttt{one}, (\emptyset, ?)), (p~\texttt{two}, (\emptyset, ?)) \}
+\end{align}
+
+As mentioned earlier, we lose some freedom compared to the first match implementation, namely that the cursor could go to $l$ and modify it, without modifying any underlying trees. However, we can easily make up for this by additional substitution rules (besides the trivial ones) telling us that if the cursor surrounds a pattern already, we only update the actual $l$. Also, if we wish to extend a pattern function with additional patterns, we can do so without overwriting subtrees. If the user however desires to overwrite subtrees, this could simply be achieved by sequencing the editor commands of a pattern substitution, hole substitution and cursor movement. The added rules are:
+\begin{align}
+(\text{PATTERN-1})\qquad
+&\frac{}{\cursor{l'.\hat{a}}\transition{\{pattern l\}}\cursor{l.\hat{a}}}\\
+(\text{PATTERN-2})\qquad
+&\frac{}{\cursor{l'.\hat{a}_1.\hat{a}_2}\transition{\{pattern l\}}\cursor{l.\hat{a}_1}}\\
+(\text{PATTERN-3})\qquad
+&\frac{}{\cursor{\hat{a}}\transition{\{pattern l\}}\cursor{l.\hole}}(\hat{a}\neq l'.a' \land \hat{a}\neq l''.a_1'.a_2')\\
+(\text{PATTERNS-1})\qquad
+&\frac{}{\cursor{l'.\hat{a}}\transition{\{patterns l\}}\cursor{l.\hat{a}.\hole}}\\
+(\text{PATTERNS-2})\qquad
+&\frac{}{\cursor{l'.\hat{a}_1.\hat{a}_2}\transition{\{patterns l\}}\cursor{l.\hat{a}_1.\hat{a}_2}}\\
+(\text{PATTERNS-3})\qquad
+&\frac{}{\cursor{\hat{a}}\transition{\{patterns l\}}\cursor{l.\hole.\hole}}(\hat{a}\neq l'.a' \land \hat{a}\neq l''.a_1'.a_2')
+\end{align}
+
+Cursor movement reduction rules are extended with the rules:
+\begin{align}
+  (\text{PATTERNP-1}) \qquad &\frac{}{l.\cursor{\hat{a}}\transition{parent}\cursor{l.\hat{a}}}\\
+  (\text{PATTERNSP-1}) \qquad &\frac{}{l.\cursor{\hat{a}_1}.\hat{a}_2\transition{parent}\cursor{l.\hat{a}_1.\hat{a}_2}}\\
+  (\text{PATTERNSP-2}) \qquad &\frac{}{l.\hat{a}_1.\cursor{\hat{a}_2}\transition{parent}\cursor{l.\hat{a}_1.\hat{a}_2}}\\
+  (\text{PATTERNC-1}) \qquad &\frac{}{\cursor{l.\hat{a}}\transition{child 1}l.\cursor{\hat{a}}}\\
+(\text{PATTERNSC-1}) \qquad &\frac{}{\cursor{l.\hat{a}_1.\hat{a}_2}\transition{child 1}l.\cursor{\hat{a}_1}.\hat{a}_2}\\
+  (\text{PATTERNSC-2}) \qquad &\frac{}{\cursor{l.\hat{a}_1.\hat{a}_2}\transition{child 2}l.\hat{a}_1.\cursor{\hat{a}_2}}\\
+\end{align}
+
+The reduction rules for conditions are extended with the rules:
+\begin{align}
+  (\text{AT-PATTERN-1})\qquad&\frac{}{l.\hat{a} \vDash \at\texttt{pattern}~l}\\
+  (\text{AT-PATTERN-2})\qquad&\frac{}{l.\hat{a} \vDash \at\texttt{patterns}~l}\\
+  (\text{AT-PATTERNS-1})\qquad&\frac{}{l.\hat{a}_1\hat{a}_2 \vDash \at\texttt{pattern}~l}\\
+  (\text{AT-PATTERNS-2})\qquad&\frac{}{l.\hat{a}_1\hat{a}_2 \vDash \at\texttt{patterns}~l}\\
+  (\text{POS-PATTERN-1})\qquad&\frac{\hat{a}\vDash\possibly D}{l.\hat{a} \vDash \possibly D}\\
+  (\text{POS-PATTERNS-1})\qquad&\frac{\hat{a}_1\vDash\possibly D}{l.\hat{a}_1\hat{a}_2 \vDash \possibly D}\\
+  (\text{POS-PATTERNS-2})\qquad&\frac{\hat{a}_2\vDash\possibly D}{l.\hat{a}_1\hat{a}_2 \vDash \possibly D}\\
+  (\text{NEC-PATTERN})\qquad&\frac{\hat{a}\vDash\possibly D}{l.\hat{a} \vDash \necessarily D}\\
+  (\text{NEC-PATTERNS})\qquad&\frac{\hat{a}_1\vDash\possibly D \quad \hat{a}_2\vDash\possibly D}{l.\hat{a}_1\hat{a}_2 \vDash \necessarily D}
+\end{align}
+
+We modify two existing $limits$ cases (underlining indicate additions):
+\begin{align}
+&limits(\possibly D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}, \texttt{let}~x, \texttt{letrec}~x\underline{, \texttt{pattern}~l, \texttt{patterns}~l}\})\\
+&limits(\necessarily D, S) = S \cap (\{D\} \cup \{\texttt{app}, \texttt{lambda}~x, \texttt{break}, \texttt{let}~x, \texttt{letrec}~x\underline{, \texttt{pattern}~l, \texttt{patterns}~l} \})
+\end{align}
+
+And finally, we add the editor expression type rules:
+\begin{align}
+  (\text{T-SUB-PATTERN-1})\qquad
+&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim?\to\tau_1 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{pattern}~l}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, ?\to\tau_1)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}\\
+  (\text{T-SUB-PATTERN-2})\qquad
+&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim?\to\tau_1 \quad p~\texttt{two},\ctx{e}' \vdash \bind{E}{ok}}{p~\texttt{two},\ctx{e} \vdash \bind{\{\bind{\texttt{pattern}~l}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \overline{p~\texttt{two}}~\ctx{e}, \bind{p~\texttt{two}}{(\ctx{a}, ?\to\tau_1)}, \bind{p~\texttt{two}~\texttt{one}}{(\ctx{a}, \tau_1)}\\
+  (\text{T-SUB-PATTERNS-1})\qquad
+&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim?\to\tau_1 \quad p,\ctx{e}' \vdash \bind{E}{ok}}{p,\ctx{e} \vdash \bind{\{\bind{\texttt{patterns}~l}{\tau_1}\}.E}{ok}}\\
+&\text{where}~\ctx{e}' = \bar{p}~\ctx{e}, \bind{p}{(\ctx{a}, ?\to\tau_1)}, \bind{p~\texttt{one}}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{two}}{(\ctx{a},\tau_1)}\\
+  (\text{T-SUB-PATTERNS-2})\qquad
+&\frac{\ctx{e}(p) = (\ctx{a},\tau_2) \quad \tau_2\sim?\to\tau_1 \quad p~\texttt{two},\ctx{e}' \vdash \bind{E}{ok}}{p~\texttt{two},\ctx{e} \vdash \bind{\{\bind{\texttt{patterns}~l}{\tau_1}\}.E}{ok}}\\
+&\text{and}~~~\ctx{e}' = \overline{p~\texttt{two}}~\ctx{e}, \bind{p~\texttt{two}}{(\ctx{a}, ?\to\tau_1)}, \bind{p~\texttt{two}~\texttt{one}}{(\ctx{a}, \tau_1)}, \bind{p~\texttt{two}~\texttt{two}}{(\ctx{a},\tau_1)}
+\end{align}
+
+
+
+\newpage
+
+\section{Name-generation}
+In the Neurion editor, a program can refer to another program , by syntactical
+means of a include-expression with an accompanying database id and log index.
+The small-step semantics then handles the actual fetching of the referred
+program. The reference can either be to the newest version of a program, or the
+exact program at time of reference.
+
+In order for NTT to generate Neurion-expressions, we need some way to handle
+these references - i.e. being able to generate unique IDs for ASTs.
+Without knowing explicitly how we generate these expressions yet, I decided to
+write a module, \texttt{NameGenerator}, that abstracts name generation behind a
+\texttt{Supply} type and a function \texttt{freshName}.
+
+The \texttt{Supply} type is meant as the state for a specific name-generation
+scheme. I chose to make the default scheme, \texttt{ID}, such that it takes a
+ID, say "ast", and it will then generate the names "ast0", "ast1", "ast2", and
+so forth.
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+type Supply
+    = ID String Int
+    | Custom (List String) (List String) (List Int) (List Int) Int
+\end{lstlisting}
+The \texttt{Custom} supply is for defining other naming schemes. It takes a
+supply-pool of IDs [$x_0$,$x_1$,...,$x_n$] and a supply-pool of numbers
+[$y_0$,$y_1$,...,$y_m$], and generate names according to; $x_0y_0$, $x_0y_1$,
+..., $x_0y_m$, $x_1y_0$, $x_1y_1$, ..., $x_1y_m$, ..., $x_ny_0$, $x_ny_1$, ...,
+$x_ny_m$, $x_0x_0y_0$, $x_0x_0y_1$, and so forth. The constructors are not
+exposed, instead we have the following functions:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+getSupply : String -> Supply
+getSupply id =
+    ID id 0
+
+getCustomSupply : List String -> List Int -> Supply
+getCustomSupply ids ns =
+    case ( ids, ns ) of
+        -- no supply-pools given
+        ( [], [] ) ->
+            Custom [ "empty" ] [ "empty" ] [ 0 ] [ 0 ] 1
+
+        -- no ids given
+        ( [], _ ) ->
+            Custom [ "empty" ] [ "empty" ] ns ns 1
+
+        -- no numbers given
+        ( _, [] ) ->
+            Custom ids ids [ 0 ] [ 0 ] 1
+
+        -- intended use
+        _ ->
+            Custom ids ids ns ns 1
+\end{lstlisting}
+The idea is that for each scheme we need names for, e.g. AST references, we
+store a name-generator supply in the \texttt{model} where we need them. In the
+case of AST references in NTT, we will store a \texttt{ID} supply in the
+\texttt{model} of the \texttt{Editor}-module (where we store the state of the
+editor during use). When we need a new reference, we call \texttt{freshName} with the \texttt{ID} supply:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+freshName : Supply -> ( String, Supply )
+freshName sup =
+    case sup of
+        -- generate a fresh reference
+        ID id n ->
+            ( id ++ String.fromInt n, ID id <| n + 1 )
+
+        -- resets numbers and increments IDs
+        Custom initIDs ids initNs [] rep ->
+            freshName <| Custom initIDs (List.drop 1 ids) initNs initNs rep
+
+        -- resets ids and increments repetitions
+        Custom initIDs [] initNs ns rep ->
+            freshName <| Custom initIDs initIDs initNs ns <| rep + 1
+
+        -- generate a fresh name and increment numbers
+        Custom initIDs (id :: ids) initNs (n :: ns) rep ->
+            ( String.repeat rep id ++ String.fromInt n, Custom initIDs (id :: ids) initNs ns rep )
+\end{lstlisting}
+
+Note, a supply can be used to handle De Bruijn indeces when converting from Neurion \texttt{Exp} to NTT \texttt{Ast}.
+
+
+\newpage
+
+\section{Translating between NTT and Neurion}
+Translations are done on a case-by-case basis.
+\subsection{NTT to Neurion}
+Some general considerations: Breakpoints are not present in the Neurion syntax, but can simply be ignored for the sake of translating from NTT to Neurion (since there always will be an AST under a breakpoint node, we can always safely ignore the breakpoint). Variable-indeces are generated from a list of bindings (behaves like a context) s.t. variable IDs of lambda- and let-expressions are concatenated to the front of the list on recursive calls, and variables then use the index (+1) of their ID in the list. The main function are:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+astToNeurion : WellFormedAst -> ( Position, Exp )
+astToNeurion ast =
+    let
+        pos =
+            Ast.positionToCursor ast
+    in
+    ( pos, toNeurion [] <| Ast.fromC ast )
+
+toNeurion : List Var.Id -> Ast -> Exp
+toNeurion binds ast =
+\end{lstlisting}
+\subsubsection*{Cursor Context}
+NTT have a cursor context modelled into the datatype describing of the AST syntax (wellformed-ASTs), whereas Neurion represents the position (cursor) externally by a list of integers in $\{1,...\}$. 
+Before we start converting a NTT welformed-AST to a Neurion expression, we first convert the cursor context to a Neurion cursor position by the function \texttt{positionToCursor} listed below. After we have the position, we remove the cursor context from the wellformed-AST and do the rest of the conversion on the resulting AST.
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+
+positionToCursor : WellFormedAst -> List Int
+positionToCursor c =
+    case c of
+        Cursor a ->
+            []
+
+        CApp1 c1 _ ->
+            (::) 1 <| positionToCursor c1
+
+        CApp2 _ c1 ->
+            (::) 2 <| positionToCursor c1
+
+        CLambda _ _ c1 ->
+            (::) 1 <| positionToCursor c1
+
+        CLet1 _ _ c1 _ ->
+            (::) 1 <| positionToCursor c1
+
+        CLet2 _ _ _ c1 ->
+            (::) 2 <| positionToCursor c1
+
+        CLetrec1 _ _ c1 _ ->
+            (::) 1 <| positionToCursor c1
+
+        CLetrec2 _ _ _ c1 ->
+            (::) 2 <| positionToCursor c1
+
+        CPatterns1 _ c1 _ ->
+            (::) 1 <| positionToCursor c1
+
+        CPatterns2 _ _ c1 ->
+            (::) 2 <| positionToCursor c1
+
+        CPattern _ c1 ->
+            (::) 1 <| positionToCursor c1
+
+        CBreak c1 ->
+            positionToCursor c1
+\end{lstlisting}
+
+\subsubsection*{AST Var}
+We convert from De Bruijn to IDs by retrieving the index (+1) of the binding (with tail recursion in an auxiliary function):
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Ast.Var id ->
+    NeurionSyntax.Var <| getInd id binds
+\end{lstlisting}
+\subsubsection*{AST Const}
+As of writing, the constants of NTT are suboptimal. Function constants are very inefficient (and allows for variables inside constants). It should either revert to only using numeral constants, or get a proper implementation. For now, I assume numeral constants only:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Const n ->
+    Num <| toFloat <| Const.toInt n
+\end{lstlisting}
+\subsubsection*{AST App}
+Translates straightforward:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Ast.App ast0 ast1 ->
+    NeurionSyntax.App (toNeurion binds ast0) (toNeurion binds ast1)
+\end{lstlisting}
+\subsubsection*{AST Lambda}
+We add the new binding of variable \texttt{id} to the front of the bindings list \texttt{bind}:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Lambda id atyp ast0 ->
+    Abs (toNeurionATyp atyp) (toNeurion (id :: binds) ast0)
+\end{lstlisting}
+\subsubsection*{AST Let}
+Analogous to a combination of \texttt{App} and \texttt{Lambda}:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Ast.Let id atyp ast0 ast1 ->
+    NeurionSyntax.Let (toNeurionATyp atyp) (toNeurion (id :: binds) ast0) (toNeurion (id :: binds) ast1)
+\end{lstlisting}
+\subsubsection*{AST Letrec}
+Translates to a \texttt{let}-expression, but where $a_0$ is a \texttt{fix}ed-point:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Ast.Letrec id atyp ast0 ast1 ->
+    NeurionSyntax.Let (toNeurionATyp atyp) (Fix <| toNeurion (id :: binds) ast0) (toNeurion (id :: binds) ast1)
+\end{lstlisting}
+\subsubsection*{AST Patterns}
+NTT uses an algebraic data structure, where Neurion uses lists. First step is converting a pattern to a list, which can be done trivially. However, fallthrough cases of a NTT pattern does not translate directly to Neurion, so those are ignored for now (could probably introduce some construct to handle them correctly):
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+
+toNeurionPattern : List Var.Id -> Ast -> List ( Pattern, Exp )
+toNeurionPattern binds ast =
+    case ast of
+        Pattern l a1 ->
+            [ ( toNeurionL l, toNeurion binds a1 ) ]
+
+        Patterns l a1 a2 ->
+            (::) ( toNeurionL l, toNeurion binds a1 ) <| toNeurionPattern binds a2
+
+        _ ->
+            []
+
+toNeurionL : Pattern.L -> Pattern
+toNeurionL l =
+    case l of
+        Pattern.LVar ->
+            PVar
+
+        Pattern.LConst n ->
+            PNum <| toFloat <| Const.toInt n
+\end{lstlisting}
+We then have another problem; Neurion match-expressions is explicitly typed, whereas NTT patterns are regarded as functions (and thus, its type can always be determined statically by analysing its sub-ASTs). Thus, either NTT patterns should be explicitly typed or (better) a type analyzer should be implemented (maybe a modification of the AST typechecker s.t. it returns an \actx). For now, it simply assumes that the type is numeric:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Ast.Pattern l ast0 ->
+    Match TNum <| toNeurionPattern binds <| Ast.Pattern l ast0
+
+Ast.Patterns l ast0 ast1 ->
+    Match TNum <| toNeurionPattern binds <| Ast.Patterns l ast0 ast1
+\end{lstlisting}
+\subsubsection*{AST Break}
+Again, we simply ignore breakpoints in the translation.
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Break ast0 ->
+    toNeurion binds ast0
+\end{lstlisting}
+\subsubsection*{AST Hole}
+Translates straightforward:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+Ast.Hole atyp ->
+    NeurionSyntax.Hole
+\end{lstlisting}
+\subsubsection*{ATyp Base}
+Base-type is used for constants. Neurion does not use a general base-type, but instead implements a constant type for each of its constant. Again, I assume that NTT only use numeral constants and we get:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+TBase ->
+    TNum
+\end{lstlisting}
+\subsubsection*{ATyp Lambda}
+Translates straightforward:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+TLambda atyp0 atyp1 ->
+    TFunction (toNeurionATyp atyp0) (toNeurionATyp atyp1)
+\end{lstlisting}
+\subsubsection*{ATyp Break}
+Since we ignore breakpoints, we need also ignore breakpoint-types:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+TBreak atyp0 ->
+    toNeurionATyp atyp0
+\end{lstlisting}
+\subsubsection*{ATyp Indeterminate}
+Neurion does not use a indeterminate type for type-checking. Again, I take the liberty to assume the numeric type.
+
+
+
+\subsection{Neurion to NTT}
+For this direction, I chose to first construct an AST from an EXP, and then construct the cursor context (wellformedness) of the AST from the position. The problem with this approach is it allows to convert an AST to a wellformed-AST, which is one of the main philosophies we incorporate into the NTT editor. This is however not a problem as long as the \texttt{toWellFormedAst} lifts the return type to \texttt{Maybe WellFormed} and is implemented correctly (just as we previously introduced the \texttt{toCompleted} function for the editor expression builder).
+\\
+The Neurion syntax contains more constructs than the NTT, and thus not all Neurion expressions will translate into a NTT AST. Most could be fixed by implementation the same constructs in NTT, but some is used only internally by the Neurion evaluation and does not make sense to implement in NTT. Thus, we wrap the conversion AST in a Maybe type. (The Maybe type together with the name-supply could be abstracted to a monadic type.) The main functions are:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+neurionToAst : ( Position, Exp ) -> Maybe WellFormedAst
+neurionToAst ( pos, exp ) =
+    Maybe.andThen (\( ast, _ ) -> Ast.toWellFormed pos ast) <|
+        toAst (getSupply "x") [] exp
+
+toAst : Supply -> List String -> Exp -> Maybe ( Ast, Supply )
+toAst sup binds exp =
+\end{lstlisting}
+
+\subsubsection*{Exp Num}
+Neurion use floats and NTT integers, but otherwise straightforward:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        Num n ->
+            Just <| ( Const (Const.int <| round n), sup )
+\end{lstlisting}
+
+\subsubsection*{Exp Str}
+There are no string constants in NTT, conversion fails.
+
+\subsubsection*{Exp Var}
+Looks up the variable-name of the De Bruijn index in the list of bindings (by auxiliary function):
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        NeurionSyntax.Var id ->
+            Maybe.map (\x -> ( Ast.Var <| Var.id x, sup )) <| take ind binds
+\end{lstlisting}
+
+\subsubsection*{Exp BuiltIn}
+NTT does not have builtin operators, conversion fails.
+
+\subsubsection*{Exp ValueConstructor}
+Not implemented in NTT, conversion fails.
+
+\subsubsection*{Exp App}
+We first construct the left tree, then the right from the new state of the supply and lastly combine them:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        NeurionSyntax.App e1 e2 ->
+            Maybe.andThen
+                (\( a1, sup1 ) ->
+                    Maybe.map (\( a2, sup2 ) -> ( Ast.App a1 a2, sup2 )) <|
+                        toAst sup1 binds e2
+                )
+            <|
+                toAst sup binds e1
+\end{lstlisting}
+
+\subsubsection*{Exp Abs}
+We generate a fresh name from our supply-state, then build the type and subtree (with the generated variable added to the list of bindings) and lastly construct the abstraction node:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        Abs typ e ->
+            let
+                ( id, sup0 ) =
+                    freshName sup
+            in
+            Maybe.map2
+                (\atyp ( a, sup1 ) ->
+                    ( Lambda (Var.id id) atyp a, sup1 )
+                )
+                (toATyp typ)
+                (toAst sup0 (id :: binds) e)
+\end{lstlisting}
+
+\subsubsection*{Exp Match}
+Use auxilliary functions to go from the list data structure of Neurion to the algebraic data structure of NTT:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=0,%
+                     ]
+toPattern : Supply -> List String -> List ( Pattern, Exp ) -> Maybe ( Ast, Supply )
+toPattern sup binds clauses =
+    case clauses of
+        [] ->
+            Nothing
+
+        [ ( p, e ) ] ->
+            Maybe.map2 (\l ( a1, sup1 ) -> ( Ast.Pattern l a1, sup1 )) (toL p) (toAst sup binds e)
+
+        ( p, e ) :: ps ->
+            Maybe.andThen
+                (\( a1, sup1 ) ->
+                    Maybe.map2 (\l ( a2, sup2 ) -> ( Ast.Patterns l a1 a2, sup2 ))
+                        (toL p)
+                        (toPattern sup1 binds ps)
+                )
+            <|
+                toAst sup binds e
+
+toL : Pattern -> Maybe Pattern.L
+toL p =
+    case p of
+        PVar ->
+            Just <| Pattern.lvar
+
+        PNum n ->
+            Just <| Pattern.lconst <| Const.int <| round n
+
+        PStr str ->
+            Nothing
+
+        PTuple _ ->
+            Nothing
+
+        PValueConstructor id n ps ->
+            Nothing
+\end{lstlisting}
+As can be seen on \texttt{toL}, NTT only supports two of the Neurion pattern types. The conversion simply uses \texttt{toPattern}:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        NeurionSyntax.Match _ clauses ->
+            toPattern sup binds clauses
+\end{lstlisting}
+
+\subsubsection*{Exp Let}
+Analogous to a combination of \texttt{App} and \texttt{Abs}:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        NeurionSyntax.Let typ e1 e2 ->
+            let
+                ( id, sup0 ) =
+                    freshName sup
+            in
+            Maybe.andThen
+                (\( a1, sup1 ) ->
+                    Maybe.map2
+                        (\atyp ( a2, sup2 ) ->
+                            ( Ast.Let (Var.id id) atyp a1 a2, sup2 )
+                        )
+                        (toATyp typ)
+                        (toAst sup1 (id :: binds) e2)
+                )
+            <|
+                toAst sup0 (id :: binds) e1
+\end{lstlisting}
+
+\subsubsection*{Exp Fix}
+Converts \texttt{e} to an AST \texttt{a}, and then wrap the \texttt{fix}-point in the \texttt{letrec}-term $\letrec{\bind{x}{?}}{a}{x}$:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        Fix e ->
+            let
+                ( id, sup0 ) =
+                    freshName sup
+            in
+            Maybe.map
+                (\( a, sup1 ) ->
+                    ( Letrec (Var.id id) TIndeterminate a (Ast.Var <| Var.id id), sup1 )
+                )
+            <| toAst sup0 binds e
+\end{lstlisting}
+
+\subsubsection*{Exp Tuples}
+Not present in NTT, conversion fails.
+
+\subsubsection*{Exp Hole}
+Added indeterminate (\texttt{?}) type to the corresponding AST hole:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        NeurionSyntax.Hole ->
+            Just <| ( Ast.Hole TIndeterminate, sup )
+\end{lstlisting}
+
+\subsubsection*{Exp NEHole}
+Not present in NTT, conversion fails.
+
+\subsubsection*{Exp Include}
+Not present in NTT, conversion fails.
+
+\subsubsection*{Exp Xrs}
+Not implemented in NTT, conversion fails.
+
+\subsubsection*{Exp Xri}
+Not implemented in NTT, conversion fails.
+
+\subsubsection*{Exp PartialAppliedBuiltIn}
+Internal Neurion representation, conversion fails:
+
+\subsubsection*{Exp Subst}
+Internal Neurion representation, conversion fails:
+
+\subsubsection*{Type TNum}
+Numerals have the base type:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        TNum ->
+            Just TBase
+\end{lstlisting}
+
+\subsubsection*{Type TStr}
+Not implemented in NTT, conversion fails.
+
+\subsubsection*{Type TXrs}
+Not implemented in NTT, conversion fails.
+
+\subsubsection*{Type TXri}
+Not implemented in NTT, conversion fails.
+
+\subsubsection*{Type TVar}
+No variable types in NTT, conversion fails.
+
+\subsubsection*{Type TFunction}
+Translates straightforward:
+\begin{lstlisting}[language=elm,%
+                     label="eval-evaluated",%
+                     gobble=8,%
+                     ]
+        TFunction t1 t2 ->
+            Maybe.map2 TLambda (toATyp t1) (toATyp t2)
+\end{lstlisting}
+
+\subsubsection*{Type TTuple}
+There are no tuples in NTT, conversion fails.
+
+\subsubsection*{Type TConstructor}
+Not implemented in NTT, conversion fails.
+
+\subsection{Overview}
+Almost all NTT ASTs translates to a corresponding Neurion expression, with the exception of \texttt{TIndeterminate} types and breakpoints (which we can simply ignore so it only fails for \texttt{TIndeterminate}). However, a lot of Neurion expressions does not translate to an AST. Below are some tables that indicates translations:
+\begin{figure}[H]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|c|c|c|c|c|}
+  \hline
+       & Var & Const & App & Lambda & Let & Letrec & Pattern & Patterns & Break & Hole\\ \hline\hline
+  Num & & $\times$ & & & & & & & & \\ \hline
+  Str & & & & & & & & & & \\ \hline
+  Var & $\times$ & & & & & & & & & \\ \hline
+  BuiltIn & & & & & & & & & & \\ \hline
+  ValueConstructor & & & & & & & & & & \\ \hline
+  App & & & $\times$ & & & & & & & \\ \hline
+  Abs & & & & $\times$ & & & & & & \\ \hline
+  Match & & & & & & & $\times$ & $\times$& & \\ \hline
+  Let & & & & & $\times$& & & & & \\ \hline
+  Fix & & & & & & $\times$ & & & & \\ \hline
+  Tuple & & & & & & & & & & \\ \hline
+  Hole & & & & & & & & & & $\times$\\ \hline
+  NEHole & & & & & & & & & & \\ \hline
+  Include & & & & & & & & & & \\ \hline
+  Xrs & & & & & & & & & & \\ \hline
+  Xri & & & & & & & & & & \\ \hline
+  PartialAppliedBuiltIn & & & & & & & & & & \\ \hline
+  Subst & & & & & & & & & & \\ \hline
+\end{tabular}
+\end{center}
+\label{fig:ASTtoEXP}
+\caption{Overview of translations between \texttt{Ast} and \texttt{Exp}}
+\end{figure}
+\begin{figure}[H]
+\begin{center}
+\begin{tabular}{|c||c|c|}
+  \hline
+       & LVar & LConst\\ \hline\hline
+  PVar    & $\times$ & \\ \hline
+  PNum    & & $\times$ \\ \hline
+  PStr     & & \\ \hline
+  PTuple     & & \\ \hline
+  PValueConstructor     & & \\ \hline
+\end{tabular}
+\end{center}
+\label{fig:ASTtoEXP}
+\caption{Overview of translations between patterns.}
+\end{figure}
+\begin{figure}[H]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|}
+\hline
+       & TBase & TLambda & TBreak & TIndeterminate \\ \hline\hline
+      TNum & $\times$ & & & \\ \hline
+      TStr & & & & \\ \hline
+      TXrs & & & & \\ \hline
+      TXri & & & & \\ \hline
+      TVar & & & & \\ \hline
+      TFunction & & $\times$ & & \\ \hline
+      TTuple & & & & \\ \hline
+      TConstructor & & & & \\ \hline
+\end{tabular}
+\end{center}
+\label{fig:ATYPtoTYPE}
+\caption{Overview of translations between \texttt{ATyp} and \texttt{Type}}
+\end{figure}
+
+
+
+
+
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

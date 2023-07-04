@@ -70,29 +70,26 @@ Finally, the $\eval$ primitive allows us to evaluate the entire AST
     \scriptsize(EVAL)    & $ \Eval $              & \scriptsize(SEQ)    & $ \Seq$     \\
     \scriptsize(STRUCT)  & $\Struct$              & \scriptsize(CONTEXT)& \scriptsize$\Context$
   \end{tabular}
-  \caption{Editor Expression reduction rules}
+  \caption{Examples of transition rules for editor expressions}
   \label{fig:edtreductionrules}
 \end{figure*}
 
-The semantics of the editor calculus is given by a labelled transition system
-$(S_E, \mathcal{L}_E, \to)$, where $S_E = \edt \times \AST$ and $\mathcal{L}_E
-= \val \cup \aep \cup \{\epsilon\}$ and where transitions take the form
-$\breakpoint{E, a} \transition{$\alpha$} \breakpoint{E', a'}$ where
+The semantics of the editor calculus is given by a small-step
+operational semantics with transitions of the form
+$\conf{E, a} \transition{$\alpha$} \conf{E', a'}$ where
 $\alpha \in \mathcal{L}_E$ is an edit action or a value.
 
 Editor expressions are always reduced in configurations of the form
-$\breakpoint{E,a}$, where $E$ is the given editor expression and $a$ is the
-currently build AST to which $E$ is applied. In terms of the labeled
-transition system, we incrementally reduce the configuration until $E'$ becomes
-$\nil$, and return $\alpha$ for each increment. Figure
-\ref{fig:edtreductionrules} shows the different reduction rules for editor
+$\conf{E,a}$, where $E$ is the given editor expression and $a$ is the
+AST to which $E$ is applied. Figure
+\ref{fig:edtreductionrules} shows some of the transition rules for editor
 expressions.
 
-As an example, the rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
-for a biconditional editor expression, $\bicond{\phi}{E_1}{E_2}$, we either use
-$E_1$ or $E_2$ as editor expression for the next reduction increment, based on
-whether or not $\phi$ holds for the AST in the configuration. Hence it just
-returns $\epsilon$.
+% As an example, the rules \hyperref[fig:edtreductionrules]{(COND-1) and (COND-2)} describe that
+% for a biconditional editor expression, $\bicond{\phi}{E_1}{E_2}$, we either use
+% $E_1$ or $E_2$ as editor expression for the next reduction increment, based on
+% whether or not $\phi$ holds for the AST in the configuration. Hence it just
+% returns $\epsilon$.
 
 \subsection{A type system for editor expressions}
 
@@ -117,13 +114,13 @@ Figure \ref{fig:edttyperules} shows a selection of the type rules.
     % \scriptsize(T-CH-1)      & $ \TChOne $             & \scriptsize(T-REF)       & $ \TRef$                \\
     % \scriptsize(T-CH-2)       & $ \TChTwo$               & \scriptsize(T-EVAL)      & $\TEval$               \\
     % \scriptsize(T-PARENT)      & $ \TParent$             & \scriptsize(T-NIL)    & $\TNil$              \\
-    \scriptsize(T-SEQ)       & \scriptsize$\TSeq$ & &\\
+%   \scriptsize(T-SEQ)       & \scriptsize$\TSeq$ & &\\
 %    \scriptsize(T-REC)       & \scriptsize$\TRec$   & &   \\
     % \scriptsize(T-COND)      & \scriptsize$ \TCond$  & &\\
     % \scriptsize(T-SUB-VAR)   & $ \TSubVar$            &           & \\
     % \scriptsize(T-SUB-CONST) & $ \TSubConst$      & &\\
-    \scriptsize(T-SUB-HOLE)  & $\TSubHole$ & &           \\
-    \scriptsize(T-SUB-ABS)   & \scriptsize$\TSubAbs$   & & \\
+    \scriptsize(T-SUB-HOLE)  & $\TSubHole$ & &           \\[4mm]
+%    \scriptsize(T-SUB-ABS)   & \scriptsize$\TSubAbs$   & & \\
     \scriptsize(T-SUB-APP)   & \scriptsize$ \TSubApp$ & & \\
 %  \scriptsize(T-SUB-BREAK) & \scriptsize$\TSubBreak$ & &
   \end{tabular}

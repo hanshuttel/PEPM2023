@@ -2,22 +2,20 @@
 
 The program terms that editor expression terms can build and modify
 are terms of a simply typed $\lambda$-calculus extended with
-breakpoints and holes. The formation rules are
+breakpoints $\breakpoint{a}$ and typed holes $\bind{\hole}{\tau}$.
+
+The formation rules are
 %
 \begin{align}
- %  D & ::= \var{x}
-%   \mid \const{c}
-%   \mid \bind{\aamApp}{\tau_1\to\tau_2,\tau_1}  \\ \label{eq:lan-mod-aam}
-% &  \mid \bind{\aamLambda{x}}{\tau_1\to\tau_2} 
-%   \mid \aamBreak
-%   \mid \bind{\aamHole}{\tau} \\ 
-  a & ::= x
+a & ::= x
   \mid c
   \mid \app{a_1}{a_2}
   \mid \abs{\bind{x}{\tau}}{a}
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2} \\
+  & 
   \mid \cursor{a}
   \mid \breakpoint{a}
-  \mid \bind{\hole}{\tau} \label{eq:lan-mod-ast}
+  \mid \bind{\hole}{\tau}\label{eq:lan-mod-ast}
 \end{align}
 %
 We use a big-step reduction semantics of our $\lambda$-calculus with

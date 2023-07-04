@@ -28,24 +28,27 @@ calculus allows for partial evaluation of terms by means of
 breakpoints and like Hazelnut, terms can be incomplete in the form of
 holes. However, unlike Hazelnut which only allows for finite edit
 expressions, this calculus incorporates recursive behaviours and a
-very expressive spatial logic on ASTs. The type system of the calculus
+very expressive spatial logic on ASTs. The type system of the calculus 
 guarantees that well-typed editor expressions will always construct
 well-typed programs.
 
-In this paper we demonstrate that the editor calculus can serve as the
-basis of a structure editor by means of an implementation in
-Elm. This implementation effort involves an implementation of the
-spatial logic as well as the underlying type system. We extend the
-programming language and editor calculus of \pepm such that we now
-obtain a full programming language.
+In this paper we extend the programming language and editor calculus
+of \pepm such that we now obtain a full programming language and show
+that the editor calculus can serve as the basis of a structure editor
+for our language by means of an implementation in Elm. This
+implementation effort involves an implementation of the spatial logic
+as well as the underlying type system.
 
 Moreover, in order to create editor expressions that are used to
 traverse and modify the ASTs, we introduce an editor expression
-builder that allows us to iteratively build editor expressions.
+builder that allows us to iteratively build editor expressions and a
+macro recorder that lets us construct editor expressions from single
+edits actions.
 
-The syntax, semantics and type system of the editor calculus are
-described in section \ref{sec:editorcalculus}. In section
-\ref{sec:implementing} we outline the design of the implementation.
+The syntax, semantics and type system of the editor calculus and our
+programming language are described in section
+\ref{sec:editorcalculus}. In section \ref{sec:implementing} we outline
+the design of the implementation.
 
 
 %%% Local Variables:

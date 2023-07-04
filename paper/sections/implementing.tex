@@ -10,46 +10,14 @@ The implementation of the editor calculus requires
 \end{itemize}
 %
 Perhaps surprisingly, it also involves finding a way to script editor
-calculus expressions. In this section we outline this.
+calculus expressions. In this section we outline two approaches towards this.
 
 \subsection{Implementing the editor calculus semantics}
 
-We model the formation rules of the editor calculus in Elm as a collection of
-algebraic datatypes. As an example, expressions are given by the
-datatype
-
-\begin{lstlisting}[language=elm,%
-           label={edt-without-holes-definitions},%
-           gobble=4,%
-           caption={Formation rules (\ref{edt-formation-rules}) modeled in Elm},%
-           ]
-    type Edt
-        = Pre Aep Edt
-        | Bicond Eed Edt Edt
-        | SeqComp Edt Edt
-        | Rec Var.Id Edt
-        | Call Var.Id
-        | Nil
-\end{lstlisting}
-The rest of the formation rules are defined similarly.
-
-
-\begin{figure*}
-  \center
-  \renewcommand{\arraystretch}{2}
-  \begin{tabular}{llllll}
-    \scriptsize(AT-VAR)      & $\AtVar$      & \scriptsize(AT-CONST)  & $\AtConst$   & \scriptsize(AT-HOLE)  & $\AtHole$  \\
-    \scriptsize(AT-APP)      & $\AtApp$      & \scriptsize(AT-ABS)    & $\AtAbs$     & \scriptsize(AT-BREAK) & $\AtBreak$ \\
-    \scriptsize(POS-TRIVIAL) & $\PosTrivial$                                                                              % & \scriptsize(POS-ABS)   & $\PosAbs$    & \scriptsize(POS-BREAK) & $\PosBreak$ \\
-    \scriptsize(POS-APP-1)   & $\PosAppOne$  & \scriptsize(POS-APP-2) & $\PosAppTwo$                                      % & \scriptsize(NEC-TRIVIAL) & $\NecTrivial$ \\
-    %\scriptsize(NEC-APP)     & $\NecApp$     & \scriptsize(NEC-ABS)   & $\NecAbs$    & \scriptsize(NEC-BREAK)   & $\NecBreak$
-  \end{tabular}
-  \caption{Selected condition reduction rules}
-  \label{fig:conditionreductionrules}
-\end{figure*}
-
-The transition relation is implemented using the \elm{eval} function (from the
-\elm{Editor.Edt} module) which computes transitions.
+We model the formation rules of the editor calculus in Elm as a
+collection of algebraic datatypes, and the transition relation is
+implemented using an \elm{eval} function (from the \elm{Editor.Edt}
+module) that computes transitions.
 
 The implementation of checking if conditions in the spatial logic are
 satisfied requires special attention. The checks for the three
@@ -318,7 +286,7 @@ figure \ref{fig:final_ui}.
 
 \begin{figure*}
   \begin{center}
-    \includegraphics[width=0.7\textwidth]{assets/final_ui1.png}
+    \includegraphics[width=0.7\textwidth]{assets/tree.jpg}
   \end{center}
   \caption{A tree visualization}
   \label{fig:final_ui}

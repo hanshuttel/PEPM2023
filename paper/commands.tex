@@ -30,8 +30,13 @@
 \newcommand\abs[2]{\lambda #1.#2}
 \newcommand\cursor[1]{\llbracket #1 \rrbracket}
 \newcommand\breakpoint[1]{\langle #1 \rangle}
+\newcommand{\conf}[1]{\langle #1 \rangle}
 \newcommand\hole{\llparenthesis\rrparenthesis}
 \newcommand\transition[1]{\xrightarrow[]{\text{#1}}}
+
+\newcommand\letin[3]{\texttt{let}~#1~#2~#3}
+\newcommand\letrec[3]{\texttt{letrec}~#1~#2~#3}
+\newcommand\match[1]{\texttt{match}~#1}
 
 \newcommand\AST{\textbf{Ast}}
 \newcommand\Ast{%
