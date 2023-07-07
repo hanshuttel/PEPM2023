@@ -276,21 +276,114 @@ textual representation is simple: A conversion of the AST data structure to
 HTML, as in Figure \ref{fig:ast-in-text-form}, but with syntax highlighting.
 
 The implementation of the tree representation is more involved. Figure
-\ref{fig:final_ui} shows an example of this.
+\ref{fig:final_ui} shows an example of this. We highlight the cursor instead of
+a node representation, as this makes cursor movement smoother.
 
 The visualization of the editor expression builder is similar to the textual
-representation of ASTs. We implemented a function that given an \texttt{Edt}
-returns HTML. An example of an
-editor expression being built is in the upper left corner of the images in
-figure \ref{fig:final_ui}.
+representation of ASTs, where holes are drawn as buttons that can be used to
+insert edits. We implemented a function that given a completed \texttt{Edt}
+returns HTML. An example of an editor expression being built is to the upper
+left of tree in figure \ref{fig:final_ui}.
+
+The interface also comes with a macro-panel, as seen at the top of figure
+\ref{fig:final_ui}. It contains some commonly used editor-expressions, namely
+for program construction, navigation and evaluation, but also allows a user to
+record a completed editor expression from the builder and store it under a
+given name.
+
+Lastly, the output of the $\elm{eval}$ prefix expression is displayed at the
+bottom of the screen as seen on figure \ref{fig:final_ui}, also similar to the
+textual representation of ASTs.
 
 \begin{figure*}
   \begin{center}
-    \includegraphics[width=0.7\textwidth]{assets/tree.jpg}
+    \includegraphics[width=1\textwidth]{assets/fibtree.png}
   \end{center}
-  \caption{A tree visualization}
+  \caption{A tree visualization of the 10th fibonacci number}
   \label{fig:final_ui}
 \end{figure*}
+
+\subsection{Practicality and usability of the editor}
+\label{extensions}
+We extended the implementation beyond the calculus of
+\cite{10.1145/3441296.3441393}, namely with let-in expressions, recursion in
+the form of let-rec expressions and pattern matching. The extensions adds the
+expressiveness to the editor that one expects from a functional language. Most
+importantly, the added pattern matching constructs introduces branching to
+ASTs, which is essential for many programs. Let-in and let-rec more so there
+for a practical aspect, as they abstract lambda-application and
+fixpoint-lambda-application patterns, respectively.
+
+In order to get a better understanding of how to write programs in the editor,
+let us consider a function that computes the $n$th fibonacci number. Fibonacci
+can be recursively defined with letrec, as shown in figure
+(\ref{fig:fibonacciAst}).
+
+\begin{figure}[H]
+  \small
+  \begin{align*}
+    \letrec{fib}{&(\abs{n}{\app{(1.0.\app{(1.1.\letin{n1}{(\app{fib}{(n-1)})}\\
+    &{(\letin{n2}{(\app{fib}{(n-2)})}{(n1+n2)})})}{n})}{n<=0}})}{\hole}
+  \end{align*}
+  \caption{Recursive fibonacci program}
+  \label{fig:fibonacciAst}
+\end{figure}
+
+We can either write the program by sequencing macros or using the expression
+builder. If we use the expression builder, we can build an expression like the
+one shown in figure (\ref{fig:fibonacciEdt}). However, the complexity of the
+editor expression grows rather quickly when we construct ASTs, so using macros
+is the preferred method for construction. Figure (\ref{fig:final_ui}) shows the
+tree representation of the discussed fibonacci function computing the 10th
+fibonacci number.
+
+\begin{figure}[H]
+\small
+\begin{align*}
+  &\pre{\sub{\aamLetrec{fib}}}{\pre{\child{1}}{\pre{\sub{\aamLambda{n}}}{\pre{\child{1}}{\pre{\sub{\aamApp}}{\pre{\child{2}}{\\
+  &\pre{\sub{\const{n <= 0}}}{\pre{\parent}{\pre{\child{1}}{\pre{\sub{\aamPatterns{1}}}{\pre{\child{1}}{\\
+  &\pre{\sub{\const{0}}}{\pre{\parent}{\pre{\child{2}}{\pre{\sub{\aamApp}}{\pre{\child{2}}{\pre{\sub{\var{n}}}{\pre{\parent}{\\
+  &\pre{\child{1}}{\pre{\sub{\aamPatterns{1}}}{\pre{\child{1}}{\pre{\sub{\const{1}}}{\pre{\parent}{\pre{\child{2}}{\\
+  &\pre{\sub{\aamLet{n1}}}{\pre{\child{1}}{\pre{\sub{\aamApp}}{\pre{\child{1}}{\pre{\sub{\var{fib}}}{\pre{\parent}{\pre{\child{2}}{\\
+  &\pre{\sub{\const{n - 1}}}{\pre{\parent}{\pre{\parent}{\pre{\child{2}}{\pre{\sub{\aamLet{n2}}}{\pre{\child{1}}{\\
+  &\pre{\sub{\aamApp}}{\pre{\child{1}}{\pre{\sub{\var{fib}}}{\pre{\parent}{\pre{\child{2}}{\pre{\sub{\const{n - 2}}}{\\
+  &\pre{\parent}{\pre{\parent}{\pre{\child{2}}{\pre{\sub{\const{n1 + n2}}}{\nil}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
+\end{align*}
+\caption{Editor expression of fibonacci function in (\ref{fig:fibonacciAst})}
+  \label{fig:fibonacciEdt}
+\end{figure}
+
+The fibonacci function is a good example of how to write programs and how to
+edit with macros, but it utilized the editor expressions builder poorly. A good
+example of using the builder is an editor expression that does stepwise
+evaluation, as the one in figure (\ref{fig:stepwiseEdt}). This editor
+expressions will search through applications and abstractions for a breakpoint,
+using the modal logic to respect the order of which an application is
+evaluated, and when it finds a breakpoint, it will evaluate the program and
+then toggle the breakpoint off. This expression has a particular use case; we
+can build and adapt it to our program specifications in the builder (e.g.
+extending to include all non-leaf constructs), save it as a macro called
+"debug", and we now have a print-debugger. Throughout the editor-session, we
+can now print the state of a program at arbitrary nodes, by simply toggling a
+breakpoints and invoking the debug macro.
+
+\begin{figure}[H]
+\small
+  \begin{align*}
+     & \rec{x}{\\
+     & \bicond{\conjunction{\at{\aamLambda{z}}}{\possibly{\aamBreak}}}{\seqcomp{\pre{\child{1}}{\nil}}{\seqcomp{\call{x}}{\pre{\parent}{\nil}}}}{\\
+     & \bicond{\conjunction{\at{\aamApp}}{\conjunction{\neg{\necessarily{\aamBreak}}}{\possibly{\aamBreak}}}}{\seqcomp{\pre{\child{1}}{\nil}}{\seqcomp{\call{x}}{\pre{\parent}{\nil}}}}{\\
+     & \bicond{\conjunction{\at{\aamApp}}{\necessarily{\aamBreak}}}{\seqcomp{\pre{\child{2}}{\nil}}{\seqcomp{\call{x}}{\pre{\parent}{\nil}}}}{\\
+     & \bicond{\at{\aamBreak}}{\pre{\eval}{\pre{\sub{\aamBreak}}}{\nil}}{\nil}
+                 }
+             }
+         }
+     }
+  \end{align*}
+\caption{Stepwise evaluation editor expression}
+  \label{fig:stepwiseEdt}
+\end{figure}
+
 
 %%% Local Variables:
 %%% mode: latex

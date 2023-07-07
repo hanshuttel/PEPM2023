@@ -104,10 +104,14 @@
 }
 
 % AST node modifiers
-\newcommand\var[1]{\texttt{var}~x}
-\newcommand\const[1]{\texttt{const}~c}
+\newcommand\var[1]{\texttt{var}~#1}
+\newcommand\const[1]{\texttt{const}~#1}
 \newcommand\aamApp{\texttt{app}}
 \newcommand\aamLambda[1]{\texttt{lambda}~#1}
+\newcommand\aamLet[1]{\texttt{let}~#1}
+\newcommand\aamLetrec[1]{\texttt{letrec}~#1}
+\newcommand\aamPattern[1]{\texttt{pattern}~#1}
+\newcommand\aamPatterns[1]{\texttt{patterns}~#1}
 \newcommand\aamBreak{\texttt{break}}
 \newcommand\aamHole{\texttt{hole}}
 

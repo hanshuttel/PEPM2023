@@ -1,0 +1,138 @@
+\documentclass[10pt,a4paper,english]{article}
+
+% Packages
+\input{assets/packages}
+\usepackage{parskip}
+\setlength{\parskip}{35pt}
+
+% Style
+\input{assets/style.sty}
+
+% Commands
+\input{assets/commands.tex}
+\newcommand\letin[3]{\texttt{let}~#1~#2~#3}
+\newcommand\letrec[3]{\texttt{letrec}~#1~#2~#3}
+\newcommand\match[1]{\texttt{match}~#1}
+
+% Document
+\begin{document}
+\title{Relevant uddrag fra noter}
+\author{Thorbjørn Bülow Bringgaard}
+\maketitle
+\pagenumbering{arabic}
+
+% Sections
+\section{Let}
+Evaluation is simply syntactic sugar for an application of a lambda.
+\begin{align}
+(\text{B-LET})\qquad
+\frac{\app{\abs{x}{a_2}}{a_1}\to a_2'}{\letin{x}{a_1}{a_2} \to a_2'}
+\end{align}
+
+\section{Letrec}
+Big step transition rule:
+\begin{align}
+(\text{B-LETREC})\qquad
+\frac{\app{\abs{x}{a_2}}{(\app{\text{Y}}{\abs{x}{a_1}})}\to a_2'}{\letrec{x}{a_1}{a_2} \to a_2'}
+\end{align}
+where the Y is the fixed-point Y-combinator:
+\begin{align}
+  \text{Y} = \abs{f}{\app{(\abs{x}{\app{f}{(\app{x}{x})}})}{(\abs{x}{\app{f}{(\app{x}{x})}})}}
+\end{align}
+That is, $\app{\text{Y}}{\abs{x}{a_1}}$ expands to:
+\begin{align}
+&\app{\text{Y}}{\abs{x}{a_1}}\\
+&\app{(\abs{f}{\app{(\abs{x}{\app{f}{(\app{x}{x})}})}{(\abs{x}{\app{f}{(\app{x}{x})}})}})}{\abs{x}{a_1}}\\
+&\app{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})}{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})}\\
+&\app{\abs{x}{a_1}}{(\app{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})}{(\abs{x}{\app{\abs{x}{a_1}}{(\app{x}{x})}})})}\\
+&\app{\abs{x}{a_1}}{(\app{\text{Y}}{\abs{x}{a_1}})}\\
+&a_1[\app{\text{Y}}{\abs{x}{a_1}}/x]
+\end{align}
+Furthermore, the big-step transition can be seen as syntactic sugar:
+\begin{align}
+  \letrec{x}{a_1}{a_2} \equiv
+  \letin{x}{(\app{\text{Y}}{\abs{x}{a_1}})}{a_2}\equiv
+  \app{\abs{x}{a_2}}{(\app{\text{Y}}{\abs{x}{a_1}})}
+\end{align}
+This approach only works for lazy-evaluation. However, the lambda calculus
+reduces eagerly, so the Y-combinator cannot be directly reduced in our
+implementation. The Z-combinator comes to its rescue:
+\begin{align}
+  \text{Z} = \abs{f}{\app{(\abs{x}{\app{f}{(\abs{v}{\app{\app{x}{x}}{v}})}})}{(\abs{x}{\app{f}{(\abs{v}{\app{\app{x}{x}}{v}})}})}}
+\end{align}
+The added $v$ indicates the next argument of the recursion, and thus, enforce
+reduction of the argument before reducing the function, stopping the infinite
+recursion. We can use the Z-combinator instead of the Y-combinator in the
+implementation.
+
+
+{\color{red} Desværre kunne jeg ikke få det til at virke med Z-kombinatoren, så implementationen bruger faktisk call-by-name og bærger rundt på en Ctx der indeholder variablen og funktionen den er bundet til.}
+
+
+
+\section{Pattern matching}
+Instead of defining pattern match by a syntactic manner - which leads to awkward code and graph / tree representation (as two new terms are introduced, all terms are cyclic and we do not know in which term the cursor lies before evaluation) - we could instead utilize the already existing type system for the definition. Using this approach however, sacrifices some freedom of the editor in that patterns cannot be navigated and manipulated directly through a cursor, but we can easily regain this freedom in the semantics and by semantically equivalent editor commands sequences (discussed later).
+
+\subsection{AST}
+The new syntax is listed below. The most important distinction between this new definition and the old one, is that \underline{patterns are regarded as functions} instead of syntactic constructs. This also means that patterns now have a function type, specifically the type $\texttt{?}\to\tau$. I.e. patterns are functions that can take arguments of all types and produce type $\tau$.
+\begin{align}
+  a &::= x
+  \mid c
+  \mid \app{a_1}{a_2}
+  \mid \abs{\bind{x}{\tau}}{a}
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid \letrec{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid l.a_1.a_2
+  \mid l.a
+  \mid \cursor{a}
+  \mid \breakpoint{a}
+  \mid \bind{\hole}{\tau}\\
+  l &::= x_l
+  \mid c_l
+\end{align}
+
+Since patterns are now functions, a pattern is in normal form. We have the semantics that $l.a$ is a function that, given an argument of any type, either returns $a$ or fails, depending on if the arguments matches the pattern $l$, and $l.a_1.a_2$ is a function that can do two things: 1) it can be used to construct a list of patterns of which we match against, or 2) it can be used to construct a fallthrough case. Case 1) is when $a_2$ takes shape  of either $l'.a'$ or $l'.a_1'.a_2'$, and case 2) is when $a_2$ takes any other shape. Non-exhaustive patterns introduces failures into the semantics, and thus, we add a new subset of $\val$ called \textbf{FVal}, which represents failures, and use the metavariable $f$ to describe values in it. (Note that in the implementation we have omitted this \textbf{FVal} set since we already lifted the \textbf{Val} returned by the evaluator in the Result type. Thus, I have not described \textbf{FVal} in detail as the lift approach may be better suited, at least for our implementation.)
+
+\subsection{Editor}
+The editor rules are also trivially extended. For AAM we have:
+\begin{align}
+  D ::= &\var{x}
+  \mid \const{c}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2}
+  \mid \aamLambda{\bind{x}{\tau_1\to\tau_2}}
+  \mid \bind{\texttt{let}~x}{\tau_1,\tau_2}
+  \mid \bind{\texttt{letrec}~x}{\tau_1,\tau_2}
+  \mid \aamBreak\\
+  &\mid \bind{\aamHole}{\tau}
+  \mid\bind{\texttt{pattern}~l}{\tau}
+  \mid\bind{\texttt{patterns}~l}{\tau}
+\end{align}
+
+As mentioned earlier, we lose some freedom compared to the first match implementation, namely that the cursor could go to $l$ and modify it, without modifying any underlying trees. However, we can easily make up for this by additional substitution rules (besides the trivial ones) telling us that if the cursor surrounds a pattern already, we only update the actual $l$. Also, if we wish to extend a pattern function with additional patterns, we can do so without overwriting subtrees. If the user however desires to overwrite subtrees, this could simply be achieved by sequencing the editor commands of a pattern substitution, hole substitution and cursor movement. The added rules are:
+\begin{align}
+(\text{PATTERN-1})\qquad
+&\frac{}{\cursor{l'.\hat{a}}\transition{\{pattern l\}}\cursor{l.\hat{a}}}\\
+(\text{PATTERN-2})\qquad
+&\frac{}{\cursor{l'.\hat{a}_1.\hat{a}_2}\transition{\{pattern l\}}\cursor{l.\hat{a}_1}}\\
+(\text{PATTERN-3})\qquad
+&\frac{}{\cursor{\hat{a}}\transition{\{pattern l\}}\cursor{l.\hole}}(\hat{a}\neq l'.a' \land \hat{a}\neq l''.a_1'.a_2')\\
+(\text{PATTERNS-1})\qquad
+&\frac{}{\cursor{l'.\hat{a}}\transition{\{patterns l\}}\cursor{l.\hat{a}.\hole}}\\
+(\text{PATTERNS-2})\qquad
+&\frac{}{\cursor{l'.\hat{a}_1.\hat{a}_2}\transition{\{patterns l\}}\cursor{l.\hat{a}_1.\hat{a}_2}}\\
+(\text{PATTERNS-3})\qquad
+&\frac{}{\cursor{\hat{a}}\transition{\{patterns l\}}\cursor{l.\hole.\hole}}(\hat{a}\neq l'.a' \land \hat{a}\neq l''.a_1'.a_2')
+\end{align}
+
+
+
+
+
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

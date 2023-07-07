@@ -7,15 +7,19 @@ breakpoints $\breakpoint{a}$ and typed holes $\bind{\hole}{\tau}$.
 The formation rules are
 %
 \begin{align}
-a & ::= x
+  a &::= x
   \mid c
   \mid \app{a_1}{a_2}
   \mid \abs{\bind{x}{\tau}}{a}
-  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2} \\
-  & 
+  \mid \letin{\bind{x}{\tau_1}}{a_1}{a_2}\\
+    &\mid \letrec{\bind{x}{\tau_1}}{a_1}{a_2}
+  \mid l.a_1.a_2
+  \mid l.a
   \mid \cursor{a}
   \mid \breakpoint{a}
-  \mid \bind{\hole}{\tau}\label{eq:lan-mod-ast}
+  \mid \bind{\hole}{\tau}\\
+  l &::= x_l
+  \mid c_l
 \end{align}
 %
 We use a big-step reduction semantics of our $\lambda$-calculus with

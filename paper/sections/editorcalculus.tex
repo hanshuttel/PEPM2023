@@ -22,10 +22,16 @@ Editor expressions are given by the following formation rules.
   \mid \rec{x}{E}
   \mid \call{x}
   \mid \nil \label{edt-formation-rules} \\
-    D & ::= \var{x}
+    D &::= \var{x}
   \mid \const{c}
-  \mid \bind{\aamApp}{\tau_1\to\tau_2,\tau_1}  \label{eq:lan-mod-aam} \\
- &  \mid \bind{\aamLambda{x}}{\tau_1\to\tau_2} \mid \aamBreak  \mid \bind{\aamHole}{\tau}   \label{aam-formation-rules}
+  \mid \bind{\aamApp}{\tau_1\to\tau_2}\\
+    \mid &\aamLambda{\bind{x}{\tau_1\to\tau_2}}
+  \mid \bind{\texttt{let}~x}{\tau_1}~\tau_2
+\mid \bind{\texttt{letrec}~x}{\tau_1}~\tau_2\\
+    \mid &\aamBreak
+  \mid \bind{\aamHole}{\tau}
+  \mid\bind{\texttt{pattern}~l}{\tau}
+  \mid\bind{\texttt{patterns}~l}{\tau}
 \end{align}
 %
 Editor calculus expressions $E$ can examine or modify the subtree of the
